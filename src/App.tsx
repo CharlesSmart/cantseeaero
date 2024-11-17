@@ -6,7 +6,6 @@ import { PixelCounts } from './utils/imageProcessing';
 import PixelCounter from './components/PixelCounter';
 import { saveProfile, getProfiles, deleteProfile } from './utils/indexedDB';
 import EmptyState from './components/EmptyState';
-import { Progress } from "@/components/ui/progress"
 import { removeBG } from './utils/removeBG';
 import { demoProfiles } from './utils/demoProfiles';
 
@@ -16,7 +15,7 @@ function App() {
     id: 1,
     uploadedImage: null,
     imageUrl: null,
-    cachedImageUrl: null, // New property for cached image data
+    cachedImageUrl: null,
     cachedImage: null,
     pixelCounts: null,
     measurementPixels: null,
@@ -75,7 +74,7 @@ function App() {
 
   };
 
-  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(profiles[0].id);
+  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(profiles[0].id || null);
   const handleSelectProfile = (id: number) => {
     setSelectedProfileId(id);
   };

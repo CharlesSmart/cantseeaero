@@ -6,7 +6,7 @@ import ImageUploader from './ImageUploader';
 import { Profile } from '../types/Profile';
 import ProfileManager from './ProfileManager';
 import { Button } from './ui/button';
-import { PlusIcon, PanelLeftClose } from 'lucide-react';
+import { PlusIcon, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { DataRowWithInput } from './ui/datarow'; // Import the new components
 import Logo from '../assets/logo2.svg';
 
@@ -56,19 +56,18 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
 
     return (
     <div>
-        <Button 
-            className="lg:hidden fixed top-4 left-4 z-50" 
-            onClick={togglePanelVisibility}
-        >
-            {isPanelVisible ? 'Close Panel' : 'Open Panel'}
-        </Button>
+        {!isPanelVisible && (
+        <Card className='fixed left-4 top-4'>
+            <Button variant="ghost" onClick={togglePanelVisibility} className=''><PanelLeft className='w-4 h-4'/></Button>
+        </Card>
+        )}
         {isPanelVisible && (
         <Card className='max-w-xs max-h-[calc(100vh-2rem)] overflow-y-auto fixed left-4 top-4'>
             <CardHeader className='pb-0'>
                 <div><img src={Logo} alt="Windtunnel Logo" /></div>
-                <Button variant="ghost" onClick={togglePanelVisibility} className='absolute right-0 top-0'>
+                <Button variant="ghost" onClick={togglePanelVisibility} className='absolute right-2 top-2'>
                     <PanelLeftClose className='w-4 h-4 text-muted-foreground'/>
-                    </Button>
+                </Button>
                 <div className='grid grid-cols-2 items-center'>
                     <h3 className='text-lg font-semibold'>Positions</h3>
                     <Button variant="ghost" onClick={onAddProfile} className='justify-self-end gap-2 -mr-2 px-2'>
