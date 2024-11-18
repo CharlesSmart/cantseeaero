@@ -44,7 +44,14 @@ const AreaCalculator: React.FC<AreaCalculatorProps> = ({
         <>
         <div className='flex flex-col gap-2'>
           <DataRowWithInput label={'Frontal area'} value={areaM2?.toFixed(2)} onChange={() => {}} disabled={true} unit={'m²'}/>
-          <DataRowWithInput label={'Drag (Cd)'} value={cd} onChange={(e) => setCd(parseFloat(e.target.value))} disabled={false} unit={' '}/>
+          <DataRowWithInput label={'Drag (Cd)'} value={cd} onChange={(e) => {
+            const value = parseFloat(e.target.value);
+            if (!isNaN(value)) {
+              setCd(value);
+            } else {
+              setCd(0);
+            }
+          }} disabled={false} unit={' '}/>
           <div className='grid grid-cols-2 gap-8 items-center mr-2 mt-2'>
           <h3 className="text-lg font-semibold">CdA</h3><span className='font-mono font-semibold text-right'>{cdA !== null ? cdA.toFixed(4) : 'N/A'}</span>
           </div>

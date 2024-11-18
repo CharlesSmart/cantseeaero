@@ -16,7 +16,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onImageUpload, uploadedImage, o
             <p className='text-sm text-muted-foreground'>or try an example from below for a demo.</p>    
             </CardHeader>  
         <CardContent> 
-        <ImageUploader onImageUpload={onImageUpload} uploadedImage={uploadedImage} imageUrl={''} />
+        <ImageUploader onImageUpload={onImageUpload} uploadedImage={uploadedImage} />
         <div className='flex flex-row gap-2'>
             <img className='w-1/3' src="src/assets/examplepreview.png" srcSet="src/assets/examplepreview@2x.png 2x" alt="Example trainer image"  />
             <img className='w-1/3' src="src/assets/examplepreview.png" srcSet="src/assets/examplepreview@2x.png 2x" alt="Example trainer image"  />

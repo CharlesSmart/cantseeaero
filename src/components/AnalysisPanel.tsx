@@ -32,7 +32,6 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
     measurementMm,
     onLengthUpdate,
     uploadedImage,
-    imageUrl,
     handleImageUpload,
     profiles,
     onAddProfile,
@@ -85,7 +84,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                 onDeleteProfile={onDeleteProfile}
                 onImageUpload={handleImageUpload}
             />
-            <ImageUploader onImageUpload={handleImageUpload} uploadedImage={uploadedImage} imageUrl={imageUrl} /> 
+            <ImageUploader onImageUpload={handleImageUpload} uploadedImage={uploadedImage}/> 
 
             </div>
         <hr className='-mx-6'></hr>

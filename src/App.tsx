@@ -127,13 +127,13 @@ function App() {
   };
 
   const handleLengthUpdate = (length: number) => {
-    if (selectedProfile) {
-      const updatedProfile = { 
-        ...selectedProfile, 
-        measurementMm: length 
-      };
-      handleUpdateProfile(updatedProfile);
-    }
+      if (selectedProfile) {
+        const updatedProfile = { 
+          ...selectedProfile, 
+          measurementMm: length 
+        };
+        handleUpdateProfile(updatedProfile);
+      }
   };
   
   const handleRemoveBG = () => {

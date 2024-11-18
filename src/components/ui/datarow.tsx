@@ -17,12 +17,20 @@ export const DataRowWithInput: React.FC<{
     disabled?: boolean;
     unit?: string;
 }> = ({ label, value, onChange, disabled, unit }) => {
+    const inputValue = value !== undefined && !isNaN(Number(value)) ? value : '';
+
     return (
         <div className='grid grid-cols-2 gap-8 text-sm text-secondary-foreground items-center'>
             <p>{label}</p>
             <div className='grid items-center'>
-            <Input type='number' value={value !== undefined ? value : ''} onChange={onChange} className='w-20 justify-self-end font-mono disabled:text-secondary-foreground disabled:opacity-100' disabled={disabled} />
-            {unit && <p className='absolute right-8 text-right text-muted-foreground'>{unit}</p>}
+                <Input
+                    type='number'
+                    value={inputValue}
+                    onChange={onChange}
+                    className='w-20 justify-self-end font-mono disabled:text-secondary-foreground disabled:opacity-100'
+                    disabled={disabled}
+                />
+                {unit && <p className='absolute right-8 text-right text-muted-foreground'>{unit}</p>}
             </div>
         </div>
     );
