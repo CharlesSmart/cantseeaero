@@ -1,5 +1,3 @@
-// src/utils/imageProcessing.ts
-
 export interface PixelCounts {
     opaque: number;
     opaquePercentage: number;
@@ -34,7 +32,7 @@ export interface PixelCounts {
     });
   };
   
-  export const classifyPixel = (r: number, g: number, b: number, a: number): keyof PixelCounts => {
+  export const classifyPixel = (a: number): keyof PixelCounts => {
     if (a === 0) return 'transparent';
     if (a < 255) return 'semiTransparent';
     return 'opaque';
@@ -45,7 +43,7 @@ export interface PixelCounts {
     const data = imageData.data;
   
     for (let i = 0; i < data.length; i += 4) {
-      const pixelType = classifyPixel(data[i], data[i + 1], data[i + 2], data[i + 3]);
+      const pixelType = classifyPixel(data[i + 3]);
       counts[pixelType]++;
     }
 

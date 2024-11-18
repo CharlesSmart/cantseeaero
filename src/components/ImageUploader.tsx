@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 interface ImageUploaderProps {
   onImageUpload: (file: File | null) => void;
   uploadedImage: (File | null); // Add uploadedImage to props
-  imageUrl: string | null;
+  // imageUrl: string | null;
 }
 
-const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, uploadedImage, imageUrl }) => {
+const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, uploadedImage }) => {
   const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {

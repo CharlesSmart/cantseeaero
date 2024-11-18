@@ -22,7 +22,7 @@ interface PixelCounterProps {
           const counts = countPixels(imageData);
           setPixelCounts(counts);
           onPixelCountUpdate(counts);
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error analyzing image:', {
             error: error.message || error,
             fileName: imageFile.name,

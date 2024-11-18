@@ -38,11 +38,6 @@ const AreaCalculator: React.FC<AreaCalculatorProps> = ({
     }
   }, [areaM2, cd]);
 
-  // Add this useEffect to log cdA whenever it changes
-  useEffect(() => {
-    console.log("areaM2", areaM2);
-    console.log("cdA", cdA);
-  }, [cdA]);
 
   return (
     <div className="">

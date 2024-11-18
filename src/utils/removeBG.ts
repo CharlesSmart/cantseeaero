@@ -17,7 +17,7 @@ export const removeBG = async (
       output_type: "Default", 
     });
 
-    const removedBackgroundUrl = result.data[0].url;
+    const removedBackgroundUrl = (result.data as { url: string }[])[0].url;
     const response = await fetch(removedBackgroundUrl);
     const blob = await response.blob();
     const cachedImageUrl = URL.createObjectURL(blob);
