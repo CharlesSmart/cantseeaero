@@ -8,7 +8,8 @@ import { saveProfile, getProfiles, deleteProfile } from './utils/indexedDB';
 import EmptyState from './components/EmptyState';
 import { removeBG } from './utils/removeBG';
 import { demoProfiles } from './utils/demoProfiles';
-
+import { ThemeProvider } from './components/theme-provider';
+import { ModeToggle } from './components/mode-toggle';
 
 function App() {
   const [profiles, setProfiles] = useState<Profile[]>([{
@@ -47,12 +48,14 @@ function App() {
       setProfiles(profilesWithBlobUrls);
       setSelectedProfileId(profilesWithBlobUrls[0].id); // Set the first profile's id
       } else {
-        await saveProfile(profiles[0]);
+        // await saveProfile(profiles[0]);
       }
     };
     loadProfiles();
   }, []);
 
+
+  
   const handleLoadDemoProfiles = () => {
     setProfiles(demoProfiles);
   };
@@ -74,7 +77,7 @@ function App() {
 
   };
 
-  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(profiles[0].id || null);
+  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(profiles.length > 0 ? profiles[0].id : null);
   const handleSelectProfile = (id: number) => {
     setSelectedProfileId(id);
   };
@@ -84,13 +87,31 @@ function App() {
       profile.id === updatedProfile.id ? updatedProfile : profile,
     ));
     await saveProfile(updatedProfile);
-
   };
 
   const handleDeleteProfile = async (id: number) => {
-    setProfiles(profiles.filter(profile => profile.id !== id));
+    const updatedProfiles = profiles.filter(profile => profile.id !== id);
+    setProfiles(updatedProfiles);
     await deleteProfile(id);
-    setSelectedProfileId(1);
+
+    if (updatedProfiles.length === 0) {
+      // Initialize a new default profile if no profiles are left
+      const defaultProfile: Profile = {
+        id: 1,
+        uploadedImage: null,
+        imageUrl: null,
+        cachedImageUrl: null,
+        cachedImage: null,
+        pixelCounts: null,
+        measurementPixels: null,
+        measurementMm: null,
+      };
+      setProfiles([defaultProfile]);
+      setSelectedProfileId(defaultProfile.id);
+      await saveProfile(defaultProfile);
+    } else {
+      setSelectedProfileId(updatedProfiles[0].id);
+    }
   };
 
   const selectedProfile = profiles.find(profile => profile.id === selectedProfileId);
@@ -103,8 +124,8 @@ function App() {
           imageUrl: URL.createObjectURL(file)
         };
         handleUpdateProfile(updatedProfile);
-    };
-  }
+    } 
+  };
 
   const handlePixelCountUpdate = (counts: PixelCounts) => {
     if (selectedProfile) {
@@ -155,17 +176,23 @@ function App() {
   //   };
   // }, [profiles]);
 
+  // useEffect(() => {
+  //   console.log("Updated profiles:", profiles);
+  // }, [profiles]);
+
   return (
+    <ThemeProvider defaultTheme='light' storageKey='vite-ui-theme'>
+      <ModeToggle />
     <div className="min-w-screen min-h-screen bg-background-pattern bg-no-repeat bg-cover">
         <>
-        {profiles.every(profile => !profile.uploadedImage) && // Check if all profiles have no uploaded image
+        {profiles.every(profile => profile.uploadedImage === null) &&
           <EmptyState 
           onImageUpload={handleImageUpload} 
           uploadedImage={selectedProfile?.uploadedImage as File} 
           onLoadDemoProfiles={handleLoadDemoProfiles} 
           />
         } 
-        {!profiles.every(profile => !profile.uploadedImage) &&
+        {profiles.some(profile => profile.uploadedImage !== null) &&
           <>
           <PixelCounter 
             imageFile={imageToUse as File}
@@ -197,6 +224,7 @@ function App() {
         </>
         
     </div>
+    </ThemeProvider>
   );
 }
 

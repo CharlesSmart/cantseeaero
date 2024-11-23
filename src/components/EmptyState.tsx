@@ -18,8 +18,8 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onImageUpload, uploadedImage, o
         <CardContent> 
         <ImageUploader onImageUpload={onImageUpload} uploadedImage={uploadedImage} />
         <div className='flex flex-row gap-2'>
-            <img className='w-1/3' src="src/assets/examplepreview.png" srcSet="src/assets/examplepreview@2x.png 2x" alt="Example trainer image"  />
-            <img className='w-1/3' src="src/assets/examplepreview.png" srcSet="src/assets/examplepreview@2x.png 2x" alt="Example trainer image"  />
+            <img className='w-1/3' src="/demo/examplepreview.png" srcSet="/demo/examplepreview@2x.png 2x" alt="Example trainer image"  />
+            <img className='w-1/3' src="/demo/examplepreview.png" srcSet="/demo/examplepreview@2x.png 2x" alt="Example trainer image"  />
         </div>
         <button onClick={onLoadDemoProfiles}>Load Demo Profiles</button>
       </CardContent>

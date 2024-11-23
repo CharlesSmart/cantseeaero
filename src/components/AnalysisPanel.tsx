@@ -90,8 +90,8 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
         <hr className='-mx-6'></hr>
             <div className='flex flex-col gap-2'>
                 <h3 className='text-lg font-semibold'>Measurements</h3>
-                <DataRowWithInput label={'Measured length'} value={measurementPixels ?? ' '} onChange={() => {}} disabled={true} unit={'px'}></DataRowWithInput>
-                <DataRowWithInput label={'Known length'} value={measurementMm ?? ' '} onChange={handleActualLengthChange} disabled={false} unit={'mm'}></DataRowWithInput>
+                <DataRowWithInput label={'Measured length'} value={measurementPixels ?? ''} onChange={() => {}} disabled={true} unit={'px'}></DataRowWithInput>
+                <DataRowWithInput label={'Known length'} value={measurementMm ?? ''} onChange={handleActualLengthChange} disabled={false} unit={'mm'}></DataRowWithInput>
                 <hr></hr>
             
             <AreaCalculator 
