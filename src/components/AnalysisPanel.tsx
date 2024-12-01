@@ -8,7 +8,7 @@ import ProfileManager from './ProfileManager';
 import { Button } from './ui/button';
 import { PlusIcon, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { DataRowWithInput } from './ui/datarow'; // Import the new components
-import Logo from '../assets/logo.svg';
+import Logo from '../assets/aerolens_logo.svg';
 
 
 interface AnalysisPanelProps {
