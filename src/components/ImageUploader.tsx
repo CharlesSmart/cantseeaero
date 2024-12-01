@@ -3,14 +3,16 @@ import { Input } from "@/components/ui/input";
 import { AlertCircle, Upload } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from '@/components/ui/button';
+import classNames from 'classnames'; // Import classnames utility
+
 
 interface ImageUploaderProps {
   onImageUpload: (file: File | null) => void;
   uploadedImage: (File | null); // Add uploadedImage to props
-  // imageUrl: string | null;
+  className?: string;
 }
 
-const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, uploadedImage }) => {
+const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, uploadedImage, className }) => {
   const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,7 +40,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, uploadedIm
   return (
     <div>
       {!uploadedImage &&
-        <div className='h-32 mt-2 flex justify-center items-center border border-dashed rounded-lg'>
+        <div className={classNames('h-32 mt-2 flex justify-center items-center border border-dashed rounded-lg', className)}>
         <Button onClick={handleClick}><Upload className='w-4 h-4 mr-2'/>Upload Image</Button>
         </div>
       }
