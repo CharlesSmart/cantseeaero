@@ -19,7 +19,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, uploadedIm
     const file = event.target.files?.[0];
     if (file) {
       if (file.type !== 'image/png' && file.type !== 'image/jpeg') {
-        setError('Please upload a PNG');
+        setError('Please upload a JPG/PNG');
         return;
       }
       

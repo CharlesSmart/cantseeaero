@@ -14,7 +14,7 @@ const AreaCalculator: React.FC<AreaCalculatorProps> = ({
   measurementMm,
 }) => {
   const [areaM2, setAreaM2] = useState<number | null>(null);
-  const [cd, setCd] = useState<number>(0.65);
+  const [cd, setCd] = useState<number>(0.75);
   const [cdA, setCdA] = useState<number | null>(null);
 
   useEffect(() => {

@@ -53,7 +53,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({ profiles, onSelectProfi
                   </TooltipProvider>   
               }
               <div className='flex grow justify-end'>
-                <div onClick={() => onDeleteProfile(profile.id)}  className='flex h-8 w-8 self-center content-center gap-2 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-muted-foreground hover:text-primary'><Trash className='w-4 h-4 self-center'/></div>
+                <div onClick={() => onDeleteProfile(profile.id)}  className='flex h-8 w-8 self-center content-center gap-2 px-2 mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-muted-foreground hover:text-primary'><Trash className='w-4 h-4 self-center'/></div>
               </div>
             </TabsTrigger>
           ))}

@@ -218,6 +218,7 @@ function App() {
             onRemoveBG={handleRemoveBG} // Use the new handler
             isBGRemovalLoading={isBGRemovalLoading}
             selectedProfileId={selectedProfileId}
+            profiles={profiles}
           />
           </>
         }

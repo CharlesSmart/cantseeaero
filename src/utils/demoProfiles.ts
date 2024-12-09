@@ -26,6 +26,16 @@ export const demoProfiles: Profile[] = [
     measurementMm: null,
     cachedImageUrl: null,
     cachedImage: null,
+  },
+  {
+    id: 3,
+    uploadedImage: await createFileFromUrl("/demo/demoImage3.png", "Demo Image 3", "image/png"),
+    imageUrl: "/demo/demoImage3.png",
+    pixelCounts: null,
+    measurementPixels: null,
+    measurementMm: null,
+    cachedImageUrl: null,
+    cachedImage: null,
   }
 ];
 

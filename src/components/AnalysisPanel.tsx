@@ -69,13 +69,13 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                 </Button>
                 <div className='grid grid-cols-2 items-center'>
                     <h3 className='text-lg font-semibold'>Positions</h3>
-                    <Button variant="ghost" onClick={onAddProfile} className='justify-self-end gap-2 -mr-2 px-2'>
+                    <Button variant="ghost" onClick={onAddProfile} className='justify-self-end gap-2 px-2'>
                         <PlusIcon className='w-4 h-4 text-muted-foreground'/>
                         Add
                     </Button>
                 </div>
             </CardHeader>
-        <CardContent className='flex flex-col gap-6'>
+        <CardContent className='flex flex-col gap-4'>
             <div>
             <ProfileManager 
                 profiles={profiles}
@@ -87,7 +87,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
             <ImageUploader onImageUpload={handleImageUpload} uploadedImage={uploadedImage}/> 
 
             </div>
-        <hr className='-mx-6'></hr>
+        <hr className='-mx-4'></hr>
             <div className='flex flex-col gap-2'>
                 <h3 className='text-lg font-semibold'>Measurements</h3>
                 <DataRowWithInput label={'Measured length'} value={measurementPixels ?? ''} onChange={() => {}} disabled={true} unit={'px'}></DataRowWithInput>

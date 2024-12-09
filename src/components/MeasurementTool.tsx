@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Badge } from "@/components/ui/badge"
 import { ChevronDown, Eraser, MousePointer2, Ruler } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
+import { Profile } from '@/types/Profile';
 
 interface Point {
   x: number;
@@ -17,9 +19,10 @@ interface MeasurementToolProps {
   onRemoveBG: () => void;
   isBGRemovalLoading: boolean;
   selectedProfileId: number | null;
+  profiles: Profile[];
 }
 
-const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpdate, onRemoveBG, isBGRemovalLoading, selectedProfileId }) => {
+const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpdate, onRemoveBG, isBGRemovalLoading, selectedProfileId, profiles }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [startPoint, setStartPoint] = useState<Point | null>(null);
   const [endPoint, setEndPoint] = useState<Point | null>(null);
@@ -276,6 +279,24 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
 
   const isLoading = isBGRemovalLoading;
 
+  // Define the onboarding steps in a configuration object
+  const onboardingSteps = [
+    {
+      condition: (profiles: Profile[]) => profiles.every(profile => profile.measurementMm === null),
+      badge: "2",
+      title: "Measure a known length",
+      description: "Use the ruler tool to measure a length in pixels. <br />Then enter the known length in mm",
+    },
+    {
+      condition: (profiles: Profile[]) => 
+        profiles.every(profile => profile.measurementMm !== null) && // Ensure the previous step is met
+        profiles.every(profile => profile.cachedImageUrl === null),
+      badge: "3",
+      title: "Remove the background",
+      description: "To get a frontal area estimate, use the background removal tool. This will take a few seconds.",
+    },
+  ];
+
   return (
     <div>
       {imageUrl && ( 
@@ -290,15 +311,30 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
             style={{ cursor: cursorStyle }}
           />
 
-          <Card className="fixed mx-auto inset-x-0 max-w-fit bottom-4 p-2 flex flex-row gap-2">
-          
+          <Card className="fixed mx-auto inset-x-0 max-w-fit bottom-4 gap-2">          
           {isBGRemovalLoading && 
             <Progress className='w-full absolute -top-4 left-0 h-2' indeterminate={isBGRemovalLoading} />
           }
 
+          {/* Render the onboarding steps */}
+          {onboardingSteps.map((step, index) => (
+            step.condition(profiles) && (
+              <CardHeader key={index} className='flex flex-col gap-2 pb-0'>
+                <div className="">
+                  <Badge variant="info">{step.badge}</Badge>
+                  <h3 className='text-lg font-semibold'>{step.title}</h3>
+                  <p className='text-sm text-gray-500 max-w-sm' dangerouslySetInnerHTML={{ __html: step.description }} />
+                  <hr className='-mx-4 mt-4' />
+                </div>
+              </CardHeader>
+            )
+          ))}
+
+          <CardContent className='pt-4'>
+          <div className='flex flex-row gap-2'>
           <ToggleGroup defaultValue="move" type="single" onValueChange={(value) => setSelectedTool(value as 'move' | 'ruler')}>
-              <ToggleGroupItem value="move" className='gap-2'><MousePointer2 className="w-4 h-4" />Move</ToggleGroupItem>
-              <ToggleGroupItem value="ruler" className='gap-2'><Ruler className="w-4 h-4" />Ruler</ToggleGroupItem>
+              <ToggleGroupItem value="move" className='gap-2 group'><MousePointer2 className="w-4 h-4" /><span className='hidden md:block'>Move</span></ToggleGroupItem>
+              <ToggleGroupItem value="ruler" className='gap-2 group'><Ruler className="w-4 h-4" /><span className='hidden md:block'>Ruler</span></ToggleGroupItem>
             </ToggleGroup>
             <Button variant="ghost" onClick={onRemoveBG}><Eraser className="w-4 h-4" />Remove BG</Button>
             <DropdownMenu>
@@ -310,6 +346,8 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
               <DropdownMenuItem onClick={() => handleZoomChange(0.25)}>25%</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+          </div>
+          </CardContent>
           </Card>
         </>
       )}
