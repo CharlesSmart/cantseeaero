@@ -32,7 +32,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({ profiles, onSelectProfi
               className="relative group"
             >
               <div className="h-10 w-10 rounded-md bg-secondary overflow-hidden">
-                {profile.imageUrl && <img src={profile.cachedImageUrl || profile.imageUrl || ''} alt={`Profile preview`} className="object-cover" />}
+                {profile.imageUrl && <img src={profile.cachedImageUrl || profile.imageUrl || ''} alt={`Profile preview`} className="h-full object-cover" />}
               </div>
 
               <div className='min-w-10 text-left'>{capitalize(toWords(profile.id))}</div>

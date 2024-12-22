@@ -23,6 +23,12 @@ function App() {
     measurementMm: null,
   }]);
 
+  // Global calibration values
+  const [linkedMeasurementPixels, setLinkedMeasurementPixels] = useState<number | null>(null);
+  const [linkedMeasurementMm, setLinkedMeasurementMm] = useState<number | null>(null);
+  const useLinkedMeasurements = true;
+
+
   useEffect(() => {
     const loadProfiles = async () => {
       const storedProfiles = await getProfiles();
@@ -47,6 +53,10 @@ function App() {
 
       setProfiles(profilesWithBlobUrls);
       setSelectedProfileId(profilesWithBlobUrls[0].id); // Set the first profile's id
+
+      // Initialize global values with the first profile's values
+      setLinkedMeasurementPixels(profilesWithBlobUrls[0].measurementPixels);
+      setLinkedMeasurementMm(profilesWithBlobUrls[0].measurementMm);
       } else {
         // await saveProfile(profiles[0]);
       }
@@ -144,17 +154,40 @@ function App() {
         measurementPixels: pixels 
       };
       handleUpdateProfile(updatedProfile);
+
+      if (useLinkedMeasurements) {
+        setLinkedMeasurementPixels(pixels);
+        const updatedProfiles = profiles.map(profile => ({
+          ...profile,
+          measurementPixels: pixels
+        }));
+        setProfiles(updatedProfiles);
+        updatedProfiles.forEach(profile => handleUpdateProfile(profile));
+      }
     }
   };
 
   const handleLengthUpdate = (length: number) => {
-      if (selectedProfile) {
-        const updatedProfile = { 
-          ...selectedProfile, 
-          measurementMm: length 
-        };
-        handleUpdateProfile(updatedProfile);
+    if (selectedProfile) {
+      const updatedProfile = { 
+        ...selectedProfile, 
+        measurementMm: length 
+      };
+      handleUpdateProfile(updatedProfile);
+
+      if (useLinkedMeasurements) {
+        setLinkedMeasurementMm(length);
+
+        // Update all profiles' measurementMm to match linkedMeasurementMm
+        const updatedProfiles = profiles.map(profile => ({
+          ...profile,
+          measurementMm: length
+        }));
+        setProfiles(updatedProfiles);
+        updatedProfiles.forEach(profile => handleUpdateProfile(profile));
       }
+    }
+    console.log(selectedProfile);
   };
   
   const handleRemoveBG = () => {
@@ -183,7 +216,7 @@ function App() {
   return (
     <ThemeProvider defaultTheme='light' storageKey='vite-ui-theme'>
       <ModeToggle />
-    <div className="min-w-screen min-h-screen bg-background-pattern bg-no-repeat bg-cover">
+    <div className="min-w-[100vw] min-h-screen bg-background-pattern bg-no-repeat bg-cover">
         <>
         {profiles.every(profile => profile.uploadedImage === null) &&
           <EmptyState 
@@ -200,8 +233,8 @@ function App() {
           />
           <AnalysisPanel 
             pixelCounts={selectedProfile?.pixelCounts ?? null}
-            measurementPixels={selectedProfile?.measurementPixels ?? null}
-            measurementMm={selectedProfile?.measurementMm ?? null}
+            measurementPixels={useLinkedMeasurements ? linkedMeasurementPixels ?? null : selectedProfile?.measurementPixels ?? null}
+            measurementMm={useLinkedMeasurements ? linkedMeasurementMm ?? null : selectedProfile?.measurementMm ?? null}
             onLengthUpdate={handleLengthUpdate}
             uploadedImage={selectedProfile?.uploadedImage as File}
             imageUrl={selectedProfile?.imageUrl ?? ''}

@@ -14,7 +14,7 @@ export const demoProfiles: Profile[] = [
     pixelCounts: null,
     measurementPixels: null,
     measurementMm: null,
-    cachedImageUrl: null,
+    cachedImageUrl: "/demo/demoImage1.png",
     cachedImage: null,
   },
   {

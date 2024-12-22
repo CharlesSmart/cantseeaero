@@ -61,20 +61,19 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
     // Set the canvas to a larger size initially
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    // canvas.width =  1000;
-    // canvas.height = 1000;
 
 
     const img = new Image();
     img.onload = () => {
       // Draw the image onto the canvas after it loads
-      canvas.width = Math.max(img.width, window.innerWidth);
-      canvas.height = Math.max(img.height, window.innerHeight);
-      ctx.drawImage(img, 0, 0, img.width, img.height);
+      canvas.width = Math.max(img.width * zoomLevel, window.innerWidth);
+      canvas.height = Math.max(img.height * zoomLevel, window.innerHeight);
+      ctx.drawImage(img, 0, 0, img.width * zoomLevel, img.height * zoomLevel);
       imageRef.current = img;
     };
     img.src = imageUrl;
-  }, [imageUrl]);
+    
+  }, [imageUrl, zoomLevel]);
 
   const isNearLine = useCallback((x: number, y: number): boolean => {
     if (!startPoint || !endPoint) return false;
@@ -116,6 +115,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
       } else {
         setEndPoint({ x, y });
         setDistance(calculateDistance({ x, y }, startPoint));
+
       }
     }
   };
@@ -198,10 +198,24 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
     drawMeasurementTool();
   }, [selectedProfileId, drawMeasurementTool]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'm') {
+        drawMeasurementTool();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [drawMeasurementTool]);
 
   const handleCanvasMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
 
     if (selectedTool === 'move' && isImageDragging) {
       const dx = event.movementX / zoomLevel;
@@ -267,9 +281,9 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
   };
 
 // Redraw after mouse down/up
-  useEffect(() => {
-    drawMeasurementTool();
-  }, [drawMeasurementTool]);
+  // useEffect(() => {
+  //   drawMeasurementTool();
+  // }, [drawMeasurementTool]);
 
   const handleDistanceChange = () => {
     if (distance) {
@@ -277,7 +291,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
     }
   }
 
-  const isLoading = isBGRemovalLoading;
+  // const isLoading = isBGRemovalLoading;
 
   // Define the onboarding steps in a configuration object
   const onboardingSteps = [
@@ -285,7 +299,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
       condition: (profiles: Profile[]) => profiles.every(profile => profile.measurementMm === null),
       badge: "2",
       title: "Measure a known length",
-      description: "Use the ruler tool to measure a length in pixels. <br />Then enter the known length in mm",
+      description: "Use the ruler tool to measure a known length in pixels. <br />Then enter the length in mm",
     },
     {
       condition: (profiles: Profile[]) => 
@@ -297,6 +311,8 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
     },
   ];
 
+  
+
   return (
     <div>
       {imageUrl && ( 
@@ -307,7 +323,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
             onMouseMove={handleCanvasMouseMove}
             onMouseUp={handleCanvasMouseUp}
             onMouseLeave={handleCanvasMouseUp}
-            className={`border border-gray-300 ${isLoading ? 'opacity-50' : ''}`}
+            className={`border border-gray-300`}
             style={{ cursor: cursorStyle }}
           />
 
@@ -336,7 +352,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
               <ToggleGroupItem value="move" className='gap-2 group'><MousePointer2 className="w-4 h-4" /><span className='hidden md:block'>Move</span></ToggleGroupItem>
               <ToggleGroupItem value="ruler" className='gap-2 group'><Ruler className="w-4 h-4" /><span className='hidden md:block'>Ruler</span></ToggleGroupItem>
             </ToggleGroup>
-            <Button variant="ghost" onClick={onRemoveBG}><Eraser className="w-4 h-4" />Remove BG</Button>
+            <Button variant="ghost" onClick={onRemoveBG}><Eraser className="w-4 h-4" /><span className='hidden md:block'>Remove BG</span></Button>
             <DropdownMenu>
             <DropdownMenuTrigger asChild><Button variant="secondary">{zoomLevel*100}%<ChevronDown className="ml-2 w-4 h-4" /></Button></DropdownMenuTrigger>
             <DropdownMenuContent>

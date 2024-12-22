@@ -6,9 +6,10 @@ import ImageUploader from './ImageUploader';
 import { Profile } from '../types/Profile';
 import ProfileManager from './ProfileManager';
 import { Button } from './ui/button';
-import { PlusIcon, PanelLeftClose, PanelLeft } from 'lucide-react';
-import { DataRowWithInput } from './ui/datarow'; // Import the new components
+import { PlusIcon, PanelLeftClose, PanelLeft, Link2 } from 'lucide-react';
+import { DataRowWithInput } from './ui/datarow';
 import Logo from '../assets/aerolens_logo.svg';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 interface AnalysisPanelProps {
@@ -48,8 +49,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
 
     const handleActualLengthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const length = parseFloat(event.target.value);
-        onLengthUpdate(length)
- 
+            onLengthUpdate(length)
     };
 
 
@@ -89,7 +89,19 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
             </div>
         <hr className='-mx-4'></hr>
             <div className='flex flex-col gap-2'>
-                <h3 className='text-lg font-semibold'>Measurements</h3>
+                <div className='flex flex-row gap-2 items-center'>
+                    <TooltipProvider>
+                    <h3 className='text-lg font-semibold'>Measurements</h3>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Link2 className='w-4 h-4 text-muted-foreground rotate-90'/>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>All profiles use same measurements</p>
+                        </TooltipContent>
+                    </Tooltip>  
+                    </TooltipProvider>
+                </div>
                 <DataRowWithInput label={'Measured length'} value={measurementPixels ?? ''} onChange={() => {}} disabled={true} unit={'px'}></DataRowWithInput>
                 <DataRowWithInput label={'Known length'} value={measurementMm ?? ''} onChange={handleActualLengthChange} disabled={false} unit={'mm'}></DataRowWithInput>
                 <hr></hr>
