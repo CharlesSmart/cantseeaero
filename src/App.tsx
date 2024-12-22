@@ -178,7 +178,6 @@ function App() {
       if (useLinkedMeasurements) {
         setLinkedMeasurementMm(length);
 
-        // Update all profiles' measurementMm to match linkedMeasurementMm
         const updatedProfiles = profiles.map(profile => ({
           ...profile,
           measurementMm: length
@@ -187,7 +186,6 @@ function App() {
         updatedProfiles.forEach(profile => handleUpdateProfile(profile));
       }
     }
-    console.log(selectedProfile);
   };
   
   const handleRemoveBG = () => {

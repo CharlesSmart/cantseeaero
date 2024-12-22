@@ -107,15 +107,17 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
           setIsDragging('line');
         } else {
           setStartPoint({ x, y });
-          setEndPoint(null);
+          setEndPoint({ x, y }); // Initialize endPoint to the same as startPoint
+          setIsDragging('end'); // Set dragging to 'end' to allow dragging to draw
           setDistance(null);
         }
       } else if (!startPoint) {
         setStartPoint({ x, y });
+        setEndPoint({ x, y }); // Initialize endPoint to the same as startPoint
+        setIsDragging('end'); // Set dragging to 'end' to allow dragging to draw
       } else {
         setEndPoint({ x, y });
         setDistance(calculateDistance({ x, y }, startPoint));
-
       }
     }
   };
@@ -135,7 +137,6 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
     }
 
     if (startPoint && endPoint) {
-      // Calculate scaled size for draggable points
       const baseSize = 20; // Base size of the point
       const scaledSize = baseSize / zoomLevel;
       // const leftPoint = {x: Math.min(startPoint.x, endPoint.x), y: Math.min(startPoint.y, endPoint.y)};
@@ -185,32 +186,24 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
       // ctx.fillStyle = 'white';
       // ctx.fillText(distance !== null ? distance.toString() : '', 0, 0);
       // ctx.restore();
-
-
     }
 
     ctx.restore();
-  }, [startPoint, endPoint, zoomLevel, calculateDistance, imagePosition]);
+  }, [startPoint, endPoint, zoomLevel, imagePosition]);
   
-
+  // Redraw after mouse down/up
   useEffect(() => {
-    // Redraw the canvas whenever the profile changes
     drawMeasurementTool();
-  }, [selectedProfileId, drawMeasurementTool]);
+  }, [drawMeasurementTool, selectedProfileId]);
 
+  //Redraw after profile change with a delay to avoid async drawing issues - messy
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'm') {
-        drawMeasurementTool();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [drawMeasurementTool]);
+    const timeoutId = setTimeout(() => {
+      drawMeasurementTool();
+    }, 50);
+  
+    return () => clearTimeout(timeoutId);
+  }, [selectedProfileId]);
 
   const handleCanvasMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -280,10 +273,8 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
     handleDistanceChange();
   };
 
-// Redraw after mouse down/up
-  // useEffect(() => {
-  //   drawMeasurementTool();
-  // }, [drawMeasurementTool]);
+
+
 
   const handleDistanceChange = () => {
     if (distance) {
