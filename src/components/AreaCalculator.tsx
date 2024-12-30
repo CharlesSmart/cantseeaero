@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { PixelCounts } from '../utils/imageProcessing';
 import { DataRowWithInput } from './ui/datarow';
+import { calculatePower } from '../utils/calculatePower';
 
 interface AreaCalculatorProps {
   pixelCounts: PixelCounts | null;
@@ -16,6 +17,7 @@ const AreaCalculator: React.FC<AreaCalculatorProps> = ({
   const [areaM2, setAreaM2] = useState<number | null>(null);
   const [cd, setCd] = useState<number>(0.75);
   const [cdA, setCdA] = useState<number | null>(null);
+  const [power, setPower] = useState<number | null>(null);
 
   useEffect(() => {
     if (pixelCounts && measurementPixels && measurementMm) {
@@ -33,28 +35,30 @@ const AreaCalculator: React.FC<AreaCalculatorProps> = ({
   useEffect(() => {
     if (areaM2 !== null) {
       setCdA(cd * areaM2);
+      setPower(calculatePower(cdA));
     } else {
       setCdA(0);
+      setPower(0);
     }
-  }, [areaM2, cd]);
+  }, [areaM2, cd, cdA]);
 
 
   return (
     <div className="">
         <>
         <div className='flex flex-col gap-2'>
-          <DataRowWithInput label={'Frontal area'} value={areaM2?.toFixed(2)} onChange={() => {}} disabled={true} unit={'m²'}/>
-          <DataRowWithInput label={'Drag (Cd)'} value={cd} onChange={(e) => {
+        <h3 className="text-md font-semibold">Aero</h3>
+        <DataRowWithInput label={'Drag coefficient'} value={cd} onChange={(e) => {
             const value = parseFloat(e.target.value);
             if (!isNaN(value)) {
               setCd(value);
             } else {
               setCd(0);
             }
-          }} disabled={false} unit={' '}/>
-          <div className='grid grid-cols-2 gap-8 items-center mr-2 mt-2'>
-          <h3 className="text-lg font-semibold">CdA</h3><span className='font-mono font-semibold text-right'>{cdA !== null ? cdA.toFixed(4) : 'N/A'}</span>
-          </div>
+          }} disabled={false} unit={' '} variant='default'/>
+          <DataRowWithInput label={'Frontal area'} value={areaM2?.toFixed(2)} onChange={() => {}} disabled={true} unit={'m²'} variant='default'/>
+          <DataRowWithInput label={'CdA'} value={cdA?.toFixed(2)} onChange={() => {}} disabled={true} unit={''} variant='default'/>
+          <DataRowWithInput label={'Power at 45kmph'} value={power?.toFixed(0)} onChange={() => {}} disabled={false} unit={'w'} variant='priority'/>
         </div>
         </>
 

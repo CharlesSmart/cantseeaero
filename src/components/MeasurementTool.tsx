@@ -86,7 +86,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
     return Math.abs(d1 + d2 - lineLength) < 5;
   }, [startPoint, endPoint, calculateDistance]);
 
-  const handleCanvasMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleCanvasMouseDown = (event: React.MouseEvent<HTMLCanvasElement> ) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 

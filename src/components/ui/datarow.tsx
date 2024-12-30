@@ -15,22 +15,23 @@ export const DataRowWithInput: React.FC<{
     value: string | number | undefined;
     onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
     disabled?: boolean;
+    variant?: 'default' | 'priority';
     unit?: string;
-}> = ({ label, value, onChange, disabled, unit }) => {
+}> = ({ label, value, onChange, disabled, unit, variant }) => {
     const inputValue = value !== undefined && !isNaN(Number(value)) ? value : '';
 
     return (
-        <div className='grid grid-cols-2 gap-8 text-sm text-secondary-foreground items-center'>
+        <div className={`grid grid-cols-2 gap-8 text-sm  items-center`}>
             <p>{label}</p>
             <div className='grid items-center'>
                 <Input
                     type='number'
                     value={inputValue}
                     onChange={onChange}
-                    className='w-20 justify-self-end font-mono disabled:text-secondary-foreground disabled:opacity-100'
+                    className={`w-20 justify-self-end font-mono disabled:text-secondary-foreground disabled:opacity-100 ${variant === 'priority' ? 'bg-blue-50 border-none text-blue-700' : 'bg-card'}`}
                     disabled={disabled}
                 />
-                {unit && <p className='absolute right-8 text-right text-muted-foreground'>{unit}</p>}
+                {unit && <p className={`absolute right-8 text-right text-muted-foreground ${variant === 'priority' ? 'text-blue-500' : 'text-muted-foreground'}`}>{unit}</p>}
             </div>
         </div>
     );

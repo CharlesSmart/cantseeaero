@@ -1,2 +1,0 @@
-// calculateDistance()
-// calculateArea()

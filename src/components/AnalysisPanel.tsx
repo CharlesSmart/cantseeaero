@@ -68,7 +68,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                     <PanelLeftClose className='w-4 h-4 text-muted-foreground'/>
                 </Button>
                 <div className='grid grid-cols-2 items-center'>
-                    <h3 className='text-lg font-semibold'>Positions</h3>
+                    <h3 className='text-md font-semibold'>Positions</h3>
                     <Button variant="ghost" onClick={onAddProfile} className='justify-self-end gap-2 px-2'>
                         <PlusIcon className='w-4 h-4 text-muted-foreground'/>
                         Add
@@ -91,7 +91,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
             <div className='flex flex-col gap-2'>
                 <div className='flex flex-row gap-2 items-center'>
                     <TooltipProvider>
-                    <h3 className='text-lg font-semibold'>Measurements</h3>
+                    <h3 className='text-md font-semibold'>Measurements</h3>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Link2 className='w-4 h-4 text-muted-foreground rotate-90'/>
@@ -104,8 +104,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                 </div>
                 <DataRowWithInput label={'Measured length'} value={measurementPixels ?? ''} onChange={() => {}} disabled={true} unit={'px'}></DataRowWithInput>
                 <DataRowWithInput label={'Known length'} value={measurementMm ?? ''} onChange={handleActualLengthChange} disabled={false} unit={'mm'}></DataRowWithInput>
-                <hr></hr>
-            
+        <hr className='-mx-4 my-2'></hr> 
             <AreaCalculator 
                 pixelCounts={pixelCounts}
                 measurementPixels={measurementPixels}
