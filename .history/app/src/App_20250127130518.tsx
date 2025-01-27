@@ -10,6 +10,7 @@ import { removeBG } from '@/utils/removeBG';
 import { demoProfiles } from '@/utils/demoProfiles';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ModeToggle } from '@/components/mode-toggle';
+import { Client } from '@gradio/client';
 
 function App() {
   const [profiles, setProfiles] = useState<Profile[]>([{
@@ -27,6 +28,7 @@ function App() {
   const [linkedMeasurementPixels, setLinkedMeasurementPixels] = useState<number | null>(null);
   const [linkedMeasurementMm, setLinkedMeasurementMm] = useState<number | null>(null);
   const useLinkedMeasurements = true;
+  console.log(Client);
 
   useEffect(() => {
     const loadProfiles = async () => {

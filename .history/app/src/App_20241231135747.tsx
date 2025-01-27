@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Profile } from '@/types/Profile';
-import MeasurementTool from '@/components/MeasurementTool';
-import AnalysisPanel from '@/components/AnalysisPanel';
-import { PixelCounts } from '@/utils/imageProcessing';
-import PixelCounter from '@/components/PixelCounter';
-import { saveProfile, getProfiles, deleteProfile } from '@/utils/indexedDB';
-import EmptyState from '@/components/EmptyState';
-import { removeBG } from '@/utils/removeBG';
-import { demoProfiles } from '@/utils/demoProfiles';
-import { ThemeProvider } from '@/components/theme-provider';
-import { ModeToggle } from '@/components/mode-toggle';
+import { Profile } from './types/Profile';
+import MeasurementTool from './components/MeasurementTool';
+import AnalysisPanel from './components/AnalysisPanel';
+import { PixelCounts } from './utils/imageProcessing';
+import PixelCounter from './components/PixelCounter';
+import { saveProfile, getProfiles, deleteProfile } from './utils/indexedDB';
+import EmptyState from './components/EmptyState';
+import { removeBG } from './utils/removeBG';
+import { demoProfiles } from './utils/demoProfiles';
+import { ThemeProvider } from './components/theme-provider';
+import { ModeToggle } from './components/mode-toggle';
 
 function App() {
   const [profiles, setProfiles] = useState<Profile[]>([{
@@ -27,6 +27,7 @@ function App() {
   const [linkedMeasurementPixels, setLinkedMeasurementPixels] = useState<number | null>(null);
   const [linkedMeasurementMm, setLinkedMeasurementMm] = useState<number | null>(null);
   const useLinkedMeasurements = true;
+
 
   useEffect(() => {
     const loadProfiles = async () => {

@@ -18,8 +18,8 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onImageUpload, uploadedImage, o
         <ImageUploader className='border-none h-auto mb-6' onImageUpload={onImageUpload} uploadedImage={uploadedImage} />
         <p className='text-sm text-muted-foreground text-center'>or try an example</p>    
         <a className='flex flex-row gap-2 group cursor-pointer pt-2 px-4 overflow-hidden' onClick={onLoadDemoProfiles}>
-            <div className='border bg-card rounded-md -rotate-2 translate-x-6 translate-y-2 transition-all group-hover:-rotate-3 group-hover:translate-y-1 group-hover:shadow-md'><img src="/app/demo/demoImagePreview1.png" srcSet="/app/demo/demoImagePreview1.png 2x" alt="Example trainer image"  /></div>
-            <div className='border bg-card rounded-md rotate-2 -translate-x-6 translate-y-2 transition-all group-hover:rotate-3 group-hover:translate-y-1 group-hover:shadow-md'><img src="/app/demo/demoImagePreview2.png" srcSet="/app/demo/demoImagePreview2.png 2x" alt="Example trainer image"  /></div>
+            <div className='border bg-card rounded-md -rotate-2 translate-x-6 translate-y-2 transition-all group-hover:-rotate-3 group-hover:translate-y-1 group-hover:shadow-md'><img src="/app/demo/demoImagePreview1.png" srcSet="/demo/demoImagePreview1.png 2x" alt="Example trainer image"  /></div>
+            <div className='border bg-card rounded-md rotate-2 -translate-x-6 translate-y-2 transition-all group-hover:rotate-3 group-hover:translate-y-1 group-hover:shadow-md'><img src="/app/demo/demoImagePreview2.png" srcSet="/demo/demoImagePreview2.png 2x" alt="Example trainer image"  /></div>
         </a>
       </CardContent>
     </Card>

@@ -28,6 +28,7 @@ function App() {
   const [linkedMeasurementMm, setLinkedMeasurementMm] = useState<number | null>(null);
   const useLinkedMeasurements = true;
 
+
   useEffect(() => {
     const loadProfiles = async () => {
       const storedProfiles = await getProfiles();
