@@ -9,7 +9,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": [
-        "app/src/*"
+        "src/*"
       ]
     },
     /* Bundler mode */
@@ -26,5 +26,5 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["app/src"]
+  "include": ["src"]
 }
