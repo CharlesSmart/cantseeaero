@@ -1,3 +1,0 @@
-// startMeasurement(), 
-// endMeasurement(), 
-// setActualLength()

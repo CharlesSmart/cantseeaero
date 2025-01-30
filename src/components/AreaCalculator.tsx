@@ -37,8 +37,8 @@ const AreaCalculator: React.FC<AreaCalculatorProps> = ({
       setCdA(cd * areaM2);
       setPower(calculatePower(cdA));
     } else {
-      setCdA(0);
-      setPower(0);
+      // setCdA(0);
+      // setPower(0);
     }
   }, [areaM2, cd, cdA]);
 
@@ -56,9 +56,9 @@ const AreaCalculator: React.FC<AreaCalculatorProps> = ({
               setCd(0);
             }
           }} disabled={false} unit={' '} variant='default'/>
-          <DataRowWithInput label={'Frontal area'} value={areaM2?.toFixed(2)} onChange={() => {}} disabled={true} unit={'m²'} variant='default'/>
-          <DataRowWithInput label={'CdA'} value={cdA?.toFixed(2)} onChange={() => {}} disabled={true} unit={''} variant='default'/>
-          <DataRowWithInput label={'Power at 45kmph'} value={power?.toFixed(0)} onChange={() => {}} disabled={false} unit={'w'} variant='priority'/>
+          <DataRowWithInput label={'Frontal area'} value={areaM2?.toFixed(2) ?? ''} onChange={() => {}} disabled={true} unit={'m²'} variant='default'/>
+          <DataRowWithInput label={'CdA'} value={cdA?.toFixed(2) ?? ''} onChange={() => {}} disabled={true} unit={''} variant='default'/>
+          <DataRowWithInput label={'Power at 45kmph'} value={power?.toFixed(0) ?? ''} onChange={() => {}} disabled={false} unit={'w'} variant='priority'/>
         </div>
         </>
 

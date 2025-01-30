@@ -97,7 +97,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                             <Link2 className='w-4 h-4 text-muted-foreground rotate-90'/>
                         </TooltipTrigger>
                         <TooltipContent>
-                            <p>Profiles use the same calibration measurements</p>
+                            <p>Positions use the same calibration measurements</p>
                         </TooltipContent>
                     </Tooltip>  
                     </TooltipProvider>

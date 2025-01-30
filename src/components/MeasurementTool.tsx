@@ -290,7 +290,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
       condition: (profiles: Profile[]) => profiles.every(profile => profile.measurementMm === null),
       badge: "2",
       title: "Measure a known length",
-      description: "Use the ruler tool to measure a known length in pixels. <br />Then enter the length in mm",
+      description: "Use the ruler tool to measure a known length in pixels. <br />Then enter the length in mm on the left",
     },
     {
       condition: (profiles: Profile[]) => 
@@ -298,7 +298,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
         profiles.every(profile => profile.cachedImageUrl === null),
       badge: "3",
       title: "Remove the background",
-      description: "To get a frontal area estimate, use the background removal tool. This will take a few seconds.",
+      description: "To get a frontal area estimate, use the remove background tool. This will take a few seconds.",
     },
   ];
 
