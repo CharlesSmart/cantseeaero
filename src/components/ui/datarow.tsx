@@ -19,19 +19,22 @@ export const DataRowWithInput: React.FC<{
     unit?: string;
 }> = ({ label, value, onChange, disabled, unit, variant }) => {
     const inputValue = value !== undefined && !isNaN(Number(value)) ? value : '';
+    const inputId = `input-${label.toLowerCase().replace(/\s+/g, '-')}`;
 
     return (
-        <div className={`grid grid-cols-2 gap-8 text-sm  items-center`}>
-            <p>{label}</p>
+        <div className={`grid grid-cols-2 gap-8 text-sm items-center`}>
+            <label htmlFor={inputId} className='text-foreground'>{label}</label>
             <div className='grid items-center'>
                 <Input
+                    id={inputId}
                     type='number'
                     value={inputValue}
                     onChange={onChange}
-                    className={`w-20 justify-self-end font-mono disabled:text-secondary-foreground disabled:opacity-100 ${variant === 'priority' ? 'bg-blue-50 border-none text-blue-700' : 'bg-card'}`}
+                    className={`w-20 justify-self-end font-mono disabled:text-foreground disabled:opacity-100 ${variant === 'priority' ? 'bg-blue-50 border-none text-blue-700' : 'bg-card'}`}
                     disabled={disabled}
+                    aria-label={`${label} value in ${unit || ''}`}
                 />
-                {unit && <p className={`absolute right-8 text-right text-muted-foreground ${variant === 'priority' ? 'text-blue-500' : 'text-muted-foreground'}`}>{unit}</p>}
+                {unit && <span className={`absolute right-8 text-right ${variant === 'priority' ? 'text-blue-500' : 'text-muted-foreground'}`} aria-hidden="true">{unit}</span>}
             </div>
         </div>
     );

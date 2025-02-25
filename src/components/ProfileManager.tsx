@@ -16,7 +16,15 @@ interface ProfileManagerProps {
 const ProfileManager: React.FC<ProfileManagerProps> = ({ profiles, onSelectProfile, selectedProfileId, onDeleteProfile }) => {
   
   const selectedProfileIdString = selectedProfileId ? toWords(selectedProfileId) : "";
-  const capitalize = (s: string) => (s && s[0].toUpperCase() + s.slice(1)) || ""
+  const capitalize = (s: string) => (s && s[0].toUpperCase() + s.slice(1)) || "";
+  
+  const handleDeleteKeyDown = (event: React.KeyboardEvent, profileId: number) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      event.stopPropagation();
+      onDeleteProfile(profileId);
+    }
+  };
 
   return (
     <div>
@@ -30,9 +38,10 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({ profiles, onSelectProfi
               value={toWords(profile.id)} 
               onClick={() => onSelectProfile(profile.id)} 
               className="relative group"
+              aria-label={`Select profile ${capitalize(toWords(profile.id))}`}
             >
               <div className="h-10 w-10 rounded-md bg-secondary overflow-hidden">
-                {profile.imageUrl && <img src={profile.cachedImageUrl || profile.imageUrl || ''} alt={`Profile preview`} className="h-full object-cover" />}
+                {profile.imageUrl && <img src={profile.cachedImageUrl || profile.imageUrl || ''} alt={`Profile ${profile.id} preview`} className="h-full object-cover" />}
               </div>
 
               <div className='min-w-10 text-left'>{capitalize(toWords(profile.id))}</div>
@@ -53,7 +62,19 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({ profiles, onSelectProfi
                   </TooltipProvider>   
               }
               <div className='flex grow justify-end'>
-                <div onClick={() => onDeleteProfile(profile.id)}  className='flex h-8 w-8 self-center content-center gap-2 px-2 mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-muted-foreground hover:text-primary'><Trash className='w-4 h-4 self-center'/></div>
+                <div 
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteProfile(profile.id);
+                  }}
+                  onKeyDown={(e) => handleDeleteKeyDown(e, profile.id)}
+                  aria-label={`Delete profile ${capitalize(toWords(profile.id))}`}
+                  className='flex h-8 w-8 self-center content-center gap-2 px-2 mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-muted-foreground hover:text-primary focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
+                >
+                  <Trash className='w-4 h-4 self-center' aria-hidden="true" />
+                </div>
               </div>
             </TabsTrigger>
           ))}

@@ -14,6 +14,8 @@ interface ImageUploaderProps {
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, uploadedImage, className }) => {
   const [error, setError] = useState<string | null>(null);
+  const errorId = "image-upload-error";
+  const inputId = "image-upload-input";
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -40,20 +42,41 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, uploadedIm
   return (
     <div>
       {!uploadedImage &&
-        <div className={classNames('h-32 mt-2 flex justify-center items-center border border-dashed rounded-lg', className)}>
-        <Button onClick={handleClick}><Upload className='w-4 h-4 mr-2'/>Upload Image</Button>
+        <div 
+          className={classNames('h-32 mt-2 flex justify-center items-center border border-dashed rounded-lg', className)}
+          role="region"
+          aria-labelledby={inputId}
+        >
+          <Button 
+            onClick={handleClick}
+            aria-controls={inputId}
+            aria-haspopup="dialog"
+          >
+            <Upload className='w-4 h-4 mr-2' aria-hidden="true" />
+            Upload Image
+          </Button>
         </div>
       }
       <Input
+        id={inputId}
+        name="imageUpload"
         type="file"
         accept="image/png,image/jpeg"
         onChange={handleFileChange}
         ref={hiddenFileInput}
         className="hidden file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
+        aria-describedby={error ? errorId : undefined}
+        aria-invalid={error ? "true" : "false"}
+        aria-label="Upload image file (JPG or PNG)"
       />
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
+        <Alert 
+          variant="destructive"
+          id={errorId}
+          role="alert"
+          aria-live="assertive"
+        >
+          <AlertCircle className="h-4 w-4" aria-hidden="true" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
