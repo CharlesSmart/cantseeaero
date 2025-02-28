@@ -23,7 +23,10 @@ const MobileCameraPage: React.FC = () => {
     }
     
     // Connect to signaling server
-    const socket = io();
+    const socket = io({
+      path: '/api/signaling',
+      transports: ['polling', 'websocket']
+    });
     socketRef.current = socket;
     
     socket.on('connect', () => {
@@ -83,6 +86,12 @@ const MobileCameraPage: React.FC = () => {
     socket.on('session-not-found', () => {
       setStatus('error');
       setErrorMessage('Session not found or expired');
+    });
+    
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      setStatus('error');
+      setErrorMessage(`Connection error: ${error.message}`);
     });
     
     return () => {

@@ -8,6 +8,16 @@
   },
   "routes": [
     {
+      "src": "/api/signaling",
+      "dest": "/api/signaling.ts",
+      "methods": ["GET", "POST", "OPTIONS"]
+    },
+    {
+      "src": "/api/signaling/(.*)",
+      "dest": "/api/signaling.ts",
+      "methods": ["GET", "POST", "OPTIONS"]
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/$1"
     }

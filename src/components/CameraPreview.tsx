@@ -26,7 +26,10 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
     }
     
     // Connect to signaling server
-    const socket = io();
+    const socket = io({
+      path: '/api/signaling',
+      transports: ['polling', 'websocket']
+    });
     socketRef.current = socket;
     
     // Create WebRTC peer
@@ -73,6 +76,12 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
       setStatus('error');
       setErrorMessage('Phone disconnected');
       onDisconnect();
+    });
+    
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      setStatus('error');
+      setErrorMessage(`Connection error: ${error.message}`);
     });
     
     return () => {

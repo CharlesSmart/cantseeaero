@@ -18,8 +18,11 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, onConnected 
   
   useEffect(() => {
     if (isOpen) {
-      // Connect to signaling server
-      const newSocket = io();
+      // Connect to signaling server with the correct path
+      const newSocket = io({
+        path: '/api/signaling',
+        transports: ['polling', 'websocket']
+      });
       socketRef.current = newSocket;
       
       newSocket.on('connect', () => {
@@ -40,6 +43,11 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, onConnected 
       });
       
       newSocket.on('session-timeout', () => {
+        setStatus('timeout');
+      });
+      
+      newSocket.on('connect_error', (error) => {
+        console.error('Socket connection error:', error);
         setStatus('timeout');
       });
       
