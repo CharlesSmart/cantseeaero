@@ -25,6 +25,7 @@ interface AnalysisPanelProps {
     onSelectProfile: (id: number) => void; 
     selectedProfileId: number | null;
     onDeleteProfile: (id: number) => void;
+    onPhoneCameraConnected?: (sessionId: string) => void;
 }
 
 const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
@@ -38,7 +39,8 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
     onAddProfile,
     onSelectProfile,
     selectedProfileId,
-    onDeleteProfile
+    onDeleteProfile,
+    onPhoneCameraConnected
 }) => {
 
     const [isPanelVisible, setIsPanelVisible] = useState<boolean>(true);
@@ -104,7 +106,11 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                 onDeleteProfile={onDeleteProfile}
                 onImageUpload={handleImageUpload}
             />
-            <ImageUploader onImageUpload={handleImageUpload} uploadedImage={uploadedImage}/> 
+            <ImageUploader 
+                onImageUpload={handleImageUpload} 
+                uploadedImage={uploadedImage}
+                onPhoneCameraConnected={onPhoneCameraConnected}
+            /> 
 
             </div>
         <hr className='-mx-4' aria-hidden="true"></hr>

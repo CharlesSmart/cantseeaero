@@ -4,15 +4,22 @@ import { AlertCircle, Upload } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from '@/components/ui/button';
 import classNames from 'classnames'; // Import classnames utility
+import PhoneCameraButton from './PhoneCameraButton';
 
 
 interface ImageUploaderProps {
   onImageUpload: (file: File | null) => void;
   uploadedImage: (File | null); // Add uploadedImage to props
   className?: string;
+  onPhoneCameraConnected?: (sessionId: string) => void;
 }
 
-const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, uploadedImage, className }) => {
+const ImageUploader: React.FC<ImageUploaderProps> = ({ 
+  onImageUpload, 
+  uploadedImage, 
+  className,
+  onPhoneCameraConnected 
+}) => {
   const [error, setError] = useState<string | null>(null);
   const errorId = "image-upload-error";
   const inputId = "image-upload-input";
@@ -47,14 +54,20 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, uploadedIm
           role="region"
           aria-labelledby={inputId}
         >
-          <Button 
-            onClick={handleClick}
-            aria-controls={inputId}
-            aria-haspopup="dialog"
-          >
-            <Upload className='w-4 h-4 mr-2' aria-hidden="true" />
-            Upload Image
-          </Button>
+          <div className="flex space-x-2">
+            <Button 
+              onClick={handleClick}
+              aria-controls={inputId}
+              aria-haspopup="dialog"
+            >
+              <Upload className='w-4 h-4 mr-2' aria-hidden="true" />
+              Upload Image
+            </Button>
+            
+            {onPhoneCameraConnected && (
+              <PhoneCameraButton onCameraConnected={onPhoneCameraConnected} />
+            )}
+          </div>
         </div>
       }
       <Input

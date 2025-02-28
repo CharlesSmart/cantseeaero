@@ -10,6 +10,8 @@ import { removeBG } from '@/utils/removeBG';
 import { demoProfiles } from '@/utils/demoProfiles';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ModeToggle } from '@/components/mode-toggle';
+import CameraPreview from '@/components/CameraPreview';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 function App() {
   const [profiles, setProfiles] = useState<Profile[]>([{
@@ -27,6 +29,9 @@ function App() {
   const [linkedMeasurementPixels, setLinkedMeasurementPixels] = useState<number | null>(null);
   const [linkedMeasurementMm, setLinkedMeasurementMm] = useState<number | null>(null);
   const useLinkedMeasurements = true;
+
+  const [cameraSessionId, setCameraSessionId] = useState<string | null>(null);
+  const [showCameraPreview, setShowCameraPreview] = useState(false);
 
   useEffect(() => {
     const loadProfiles = async () => {
@@ -210,6 +215,29 @@ function App() {
   //   console.log("Updated profiles:", profiles);
   // }, [profiles]);
 
+  const handlePhoneCameraConnected = (sessionId: string) => {
+    setCameraSessionId(sessionId);
+    setShowCameraPreview(true);
+  };
+
+  const handleCameraDisconnect = () => {
+    setCameraSessionId(null);
+    setShowCameraPreview(false);
+  };
+
+  const handleCameraCapture = async (imageData: string) => {
+    // Convert data URL to File object
+    const res = await fetch(imageData);
+    const blob = await res.blob();
+    const file = new File([blob], "camera-capture.png", { type: "image/png" });
+    
+    // Use the existing image upload handler
+    handleImageUpload(file);
+    
+    // Hide camera preview after capture
+    setShowCameraPreview(false);
+  };
+
   return (
     <ThemeProvider defaultTheme='light' storageKey='vite-ui-theme'>
       <ModeToggle />
@@ -220,10 +248,25 @@ function App() {
           onImageUpload={handleImageUpload} 
           uploadedImage={selectedProfile?.uploadedImage as File} 
           onLoadDemoProfiles={handleLoadDemoProfiles} 
+          onPhoneCameraConnected={handlePhoneCameraConnected}
           />
         } 
         {profiles.some(profile => profile.uploadedImage !== null) &&
           <>
+          {showCameraPreview && (
+            <Card className="max-w-md mx-auto mb-4 mt-4">
+              <CardHeader>
+                <h2 className="text-lg font-semibold">Phone Camera Preview</h2>
+              </CardHeader>
+              <CardContent>
+                <CameraPreview 
+                  sessionId={cameraSessionId}
+                  onCapture={handleCameraCapture}
+                  onDisconnect={handleCameraDisconnect}
+                />
+              </CardContent>
+            </Card>
+          )}
           <PixelCounter 
             imageFile={imageToUse as File}
             onPixelCountUpdate={handlePixelCountUpdate}
@@ -240,7 +283,8 @@ function App() {
             onAddProfile={handleAddProfile} 
             onSelectProfile={handleSelectProfile} 
             selectedProfileId={selectedProfileId}
-            onDeleteProfile={handleDeleteProfile} 
+            onDeleteProfile={handleDeleteProfile}
+            onPhoneCameraConnected={handlePhoneCameraConnected}
           />
           <MeasurementTool 
             imageUrl={imageUrlToUse} 
