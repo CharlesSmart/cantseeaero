@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { QRCodeSVG } from 'qrcode.react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -14,13 +14,13 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, onConnected 
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [status, setStatus] = useState<'generating' | 'ready' | 'connecting' | 'connected' | 'timeout'>('generating');
   const [timeLeft, setTimeLeft] = useState<number>(10);
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const socketRef = useRef<Socket | null>(null);
   
   useEffect(() => {
     if (isOpen) {
       // Connect to signaling server
       const newSocket = io();
-      setSocket(newSocket);
+      socketRef.current = newSocket;
       
       newSocket.on('connect', () => {
         newSocket.emit('create-session');

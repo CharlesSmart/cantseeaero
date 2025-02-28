@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import Peer from 'simple-peer';
+import SimplePeer, { Instance as SimplePeerInstance } from 'simple-peer';
 import { Button } from '@/components/ui/button';
 import { Camera } from 'lucide-react';
 
@@ -16,7 +16,7 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const socketRef = useRef<Socket | null>(null);
-  const peerRef = useRef<Peer.Instance | null>(null);
+  const peerRef = useRef<SimplePeerInstance | null>(null);
   
   useEffect(() => {
     if (!sessionId) {
@@ -30,7 +30,7 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
     socketRef.current = socket;
     
     // Create WebRTC peer
-    const peer = new Peer({
+    const peer = new SimplePeer({
       initiator: false,
       trickle: false
     });

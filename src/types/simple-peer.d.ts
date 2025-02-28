@@ -15,7 +15,7 @@ declare module 'simple-peer' {
     wrtc?: object;
   }
 
-  interface Instance {
+  export interface Instance {
     signal(data: any): void;
     send(data: string | Uint8Array | ArrayBuffer | Blob): void;
     destroy(err?: Error): void;
@@ -23,7 +23,7 @@ declare module 'simple-peer' {
     connected: boolean;
   }
 
-  interface SimplePeer {
+  export interface SimplePeer {
     new (opts?: SimplePeerOptions): Instance;
     (opts?: SimplePeerOptions): Instance;
   }
