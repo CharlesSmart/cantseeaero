@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import Peer from 'simple-peer';
+import SimplePeer, { Instance as SimplePeerInstance } from 'simple-peer';
 import { useSearchParams } from 'react-router-dom';
 
 const MobileCameraPage: React.FC = () => {
@@ -13,7 +13,7 @@ const MobileCameraPage: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const socketRef = useRef<Socket | null>(null);
-  const peerRef = useRef<Peer.Instance | null>(null);
+  const peerRef = useRef<SimplePeerInstance | null>(null);
   
   useEffect(() => {
     if (!sessionId) {
@@ -45,7 +45,7 @@ const MobileCameraPage: React.FC = () => {
         }
         
         // Create WebRTC peer
-        const peer = new Peer({
+        const peer = new SimplePeer({
           initiator: true,
           trickle: false,
           stream
