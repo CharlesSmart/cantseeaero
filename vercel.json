@@ -8,6 +8,10 @@
   },
   "routes": [
     {
+      "src": "/socket.io/(.*)",
+      "dest": "/api/signaling.ts"
+    },
+    {
       "src": "/api/signaling",
       "dest": "/api/signaling.ts",
       "methods": ["GET", "POST", "OPTIONS"]
