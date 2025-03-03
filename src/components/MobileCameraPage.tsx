@@ -79,16 +79,44 @@ const MobileCameraPage: React.FC = () => {
         // Create WebRTC peer
         let peer: SimplePeerInstance;
         try {
+          // Check if required browser APIs are available
+          if (!window.RTCPeerConnection) {
+            throw new Error('WebRTC is not supported in this browser');
+          }
+          
+          // Ensure stream is valid before creating peer
+          if (!stream || !stream.active || stream.getTracks().length === 0) {
+            throw new Error('Camera stream is not available or has no tracks');
+          }
+          
+          // Create peer with more specific options
           peer = new SimplePeer({
             initiator: true,
             trickle: false,
-            stream
+            stream,
+            config: {
+              iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:global.stun.twilio.com:3478' }
+              ]
+            }
           });
+          
+          // Verify peer was created successfully
+          if (!peer) {
+            throw new Error('Failed to create peer connection');
+          }
+          
           peerRef.current = peer;
         } catch (err) {
           console.error('Peer initialization error:', err);
           setStatus('error');
           setErrorMessage(`Peer initialization error: ${err instanceof Error ? err.message : String(err)}`);
+          
+          // Clean up stream on peer initialization failure
+          if (stream && stream.active) {
+            stream.getTracks().forEach(track => track.stop());
+          }
           return;
         }
         

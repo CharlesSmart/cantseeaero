@@ -54,10 +54,28 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
     // Create WebRTC peer
     let peer: SimplePeerInstance;
     try {
+      // Check if required browser APIs are available
+      if (!window.RTCPeerConnection) {
+        throw new Error('WebRTC is not supported in this browser');
+      }
+      
+      // Create peer with more specific options
       peer = new SimplePeer({
         initiator: false,
-        trickle: false
+        trickle: false,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
+          ]
+        }
       });
+      
+      // Verify peer was created successfully
+      if (!peer) {
+        throw new Error('Failed to create peer connection');
+      }
+      
       peerRef.current = peer;
     } catch (err) {
       console.error('Peer initialization error:', err);
