@@ -36,9 +36,8 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, onConnected 
           
           console.log(`🔍 Attempting connection with path: ${path} (attempt ${connectionAttempt + 1})`);
           
-          const newSocket = io({
-            path,
-            transports: ['polling', 'websocket'],
+          const newSocket = io('https://cantseeaero-signalling-server.onrender.com', {
+            transports: ['websocket', 'polling'],
             reconnectionAttempts: 3,
             reconnectionDelay: 1000,
             timeout: 20000

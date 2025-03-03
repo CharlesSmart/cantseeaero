@@ -23,8 +23,7 @@ const MobileCameraPage: React.FC = () => {
     }
     
     // Connect to signaling server
-    const socket = io({
-      path: '/api/signaling',
+    const socket = io('https://cantseeaero-signalling-server.onrender.com', {
       transports: ['polling', 'websocket']
     });
     socketRef.current = socket;

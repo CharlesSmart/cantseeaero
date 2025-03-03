@@ -26,8 +26,7 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
     }
     
     // Connect to signaling server
-    const socket = io({
-      path: '/api/signaling',
+    const socket = io('https://cantseeaero-signalling-server.onrender.com', {
       transports: ['polling', 'websocket']
     });
     socketRef.current = socket;
