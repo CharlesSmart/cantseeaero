@@ -201,23 +201,11 @@ function App() {
   const imageUrlToUse = selectedProfile?.cachedImageUrl ?? selectedProfile?.imageUrl ?? '';
   const imageToUse = selectedProfile?.cachedImage ?? selectedProfile?.uploadedImage ?? null;
 
-  //Work out how to remove profiles on unload? to avoid memory leak
-  // useEffect(() => {
-  //   return () => {
-  //     profiles.forEach(profile => {
-  //       if (profile.imageUrl) URL.revokeObjectURL(profile.imageUrl);
-  //       if (profile.cachedImageUrl) URL.revokeObjectURL(profile.cachedImageUrl);
-  //     });
-  //   };
-  // }, [profiles]);
-
-  // useEffect(() => {
-  //   console.log("Updated profiles:", profiles);
-  // }, [profiles]);
 
   const handlePhoneCameraConnected = (sessionId: string) => {
     setCameraSessionId(sessionId);
     setShowCameraPreview(true);
+    console.log("connected")
   };
 
   const handleCameraDisconnect = () => {

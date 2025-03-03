@@ -17,6 +17,7 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
   const videoRef = useRef<HTMLVideoElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const peerRef = useRef<SimplePeerInstance | null>(null);
+  const isComponentMounted = useRef<boolean>(true); // Track component mount state
   
   useEffect(() => {
     if (!sessionId) {
@@ -26,31 +27,84 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
     }
     
     // Connect to signaling server
-    const socket = io('https://cantseeaero-signalling-server.onrender.com', {
-      transports: ['polling', 'websocket']
-    });
-    socketRef.current = socket;
+    let socket: Socket;
+    try {
+      socket = io('https://cantseeaero-signalling-server.onrender.com', {
+        transports: ['polling', 'websocket']
+      });
+      socketRef.current = socket;
+    } catch (err) {
+      console.error('Socket initialization error:', err);
+      setStatus('error');
+      setErrorMessage(`Socket initialization error: ${err instanceof Error ? err.message : String(err)}`);
+      return;
+    }
+    
+    // Safe emit function to prevent calling methods on undefined objects
+    const safeEmit = (event: string, data: Record<string, unknown>) => {
+      if (socketRef.current && isComponentMounted.current) {
+        try {
+          socketRef.current.emit(event, data);
+        } catch (err) {
+          console.error(`Error emitting ${event}:`, err);
+        }
+      }
+    };
     
     // Create WebRTC peer
-    const peer = new SimplePeer({
-      initiator: false,
-      trickle: false
-    });
+    let peer: SimplePeerInstance;
+    try {
+      peer = new SimplePeer({
+        initiator: false,
+        trickle: false
+      });
+      peerRef.current = peer;
+    } catch (err) {
+      console.error('Peer initialization error:', err);
+      setStatus('error');
+      setErrorMessage(`Peer initialization error: ${err instanceof Error ? err.message : String(err)}`);
+      return;
+    }
     
-    peerRef.current = peer;
+    // Safe signal function to prevent race conditions
+    const safeSignal = (data: unknown) => {
+      if (peerRef.current && isComponentMounted.current) {
+        try {
+          peerRef.current.signal(data);
+        } catch (err) {
+          console.error('Error signaling peer:', err);
+          if (isComponentMounted.current) {
+            setStatus('error');
+            setErrorMessage(`Signaling error: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
+      }
+    };
     
     peer.on('signal', (data) => {
-      socket.emit('signal', { sessionId, signal: data });
+      if (isComponentMounted.current) {
+        safeEmit('signal', { sessionId, signal: data });
+      }
     });
     
     peer.on('stream', (stream) => {
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setStatus('connected');
+      if (videoRef.current && isComponentMounted.current) {
+        try {
+          videoRef.current.srcObject = stream;
+          setStatus('connected');
+        } catch (err) {
+          console.error('Error setting video stream:', err);
+          if (isComponentMounted.current) {
+            setStatus('error');
+            setErrorMessage(`Error setting video stream: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
       }
     });
     
     peer.on('data', (data) => {
+      if (!isComponentMounted.current) return;
+      
       try {
         const message = JSON.parse(data.toString());
         if (message.type === 'capture') {
@@ -63,39 +117,63 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
     });
     
     peer.on('error', (err) => {
-      setStatus('error');
-      setErrorMessage(`Connection error: ${err.message}`);
+      console.error('Peer error:', err);
+      if (isComponentMounted.current) {
+        setStatus('error');
+        setErrorMessage(`Connection error: ${err.message}`);
+      }
     });
     
     socket.on('signal', ({ signal }) => {
-      peer.signal(signal);
+      if (signal && isComponentMounted.current) {
+        safeSignal(signal);
+      }
     });
     
     socket.on('peer-disconnected', () => {
-      setStatus('error');
-      setErrorMessage('Phone disconnected');
-      onDisconnect();
+      if (isComponentMounted.current) {
+        setStatus('error');
+        setErrorMessage('Phone disconnected');
+        onDisconnect();
+      }
     });
     
     socket.on('connect_error', (error) => {
       console.error('Socket connection error:', error);
-      setStatus('error');
-      setErrorMessage(`Connection error: ${error.message}`);
+      if (isComponentMounted.current) {
+        setStatus('error');
+        setErrorMessage(`Connection error: ${error.message}`);
+      }
     });
     
     return () => {
+      // Mark component as unmounted
+      isComponentMounted.current = false;
+      
       if (peerRef.current) {
-        peerRef.current.destroy();
+        try {
+          peerRef.current.destroy();
+        } catch (err) {
+          console.error('Error destroying peer:', err);
+        }
+        peerRef.current = null;
       }
       
       if (socketRef.current) {
-        socketRef.current.disconnect();
+        try {
+          socketRef.current.disconnect();
+        } catch (err) {
+          console.error('Error disconnecting socket:', err);
+        }
+        socketRef.current = null;
       }
     };
   }, [sessionId, onDisconnect]);
   
   const captureFrame = () => {
-    if (videoRef.current) {
+    if (!videoRef.current || !isComponentMounted.current) return;
+    
+    try {
       const canvas = document.createElement('canvas');
       canvas.width = videoRef.current.videoWidth;
       canvas.height = videoRef.current.videoHeight;
@@ -106,13 +184,25 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
         const imageData = canvas.toDataURL('image/png');
         onCapture(imageData);
       }
+    } catch (err) {
+      console.error('Error capturing frame:', err);
+      if (isComponentMounted.current) {
+        setStatus('error');
+        setErrorMessage(`Error capturing frame: ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
   };
   
   const handleCaptureClick = () => {
-    if (peerRef.current && peerRef.current.connected) {
+    if (!peerRef.current || !peerRef.current.connected) return;
+    
+    try {
       // Send capture command to phone
       peerRef.current.send(JSON.stringify({ type: 'capture' }));
+    } catch (err) {
+      console.error('Error sending capture command:', err);
+      setStatus('error');
+      setErrorMessage(`Error sending capture command: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
   
