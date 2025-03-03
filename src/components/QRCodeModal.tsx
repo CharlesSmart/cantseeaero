@@ -22,7 +22,6 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, onConnected 
     if (isOpen) {
       console.log('🔍 QRCodeModal opened, connecting to signaling server');
       
-      // Try different Socket.IO connection paths
       const connectToSocketIO = () => {
         try {
           // Disconnect previous socket if it exists
@@ -30,9 +29,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, onConnected 
             socketRef.current.disconnect();
           }
           
-          // Determine which connection path to try based on the attempt number
-          const useLegacyPath = connectionAttempt % 2 === 1;
-          const path = useLegacyPath ? '/socket.io' : '/api/signaling';
+          const path = '/socket.io';
           
           console.log(`🔍 Attempting connection with path: ${path} (attempt ${connectionAttempt + 1})`);
           
@@ -133,14 +130,10 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, onConnected 
             }
           });
           
-          return () => {
-            console.log('🔍 Cleaning up socket connection');
-            newSocket.disconnect();
-          };
+          // Don't return the cleanup function here
         } catch (error) {
           console.error('❌ Error creating Socket.IO instance:', error);
           
-          // Try the other connection path if we haven't exceeded max attempts
           if (connectionAttempt < 3) {
             console.log(`🔍 Socket creation failed, trying alternative path...`);
             setConnectionAttempt(prev => prev + 1);
@@ -148,15 +141,21 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, onConnected 
             setStatus('error');
             setErrorDetails(`Error creating connection: ${error instanceof Error ? error.message : String(error)}`);
           }
-          
-          return undefined;
         }
       };
       
-      const cleanup = connectToSocketIO();
-      return cleanup;
+      connectToSocketIO();
+
+      // Return cleanup function here instead
+      return () => {
+        console.log('🔍 Cleaning up socket connection');
+        if (socketRef.current) {
+          socketRef.current.disconnect();
+          socketRef.current = null;
+        }
+      };
     }
-  }, [isOpen, onConnected, sessionId, connectionAttempt]);
+  }, [isOpen, connectionAttempt]);
   
   useEffect(() => {
     if (status === 'ready') {
