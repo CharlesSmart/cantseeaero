@@ -97,7 +97,7 @@ const MobileCameraPage: React.FC = () => {
           try {
             peer = new SimplePeer({
               initiator: true,
-              trickle: false,
+              trickle: true,
               stream,
               config: {
                 iceServers: [

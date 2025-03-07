@@ -62,7 +62,7 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
       // Create peer with more specific options
       peer = new SimplePeer({
         initiator: false,
-        trickle: false,
+        trickle: true,
         config: {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
