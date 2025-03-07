@@ -1,7 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
+import global from 'global'
+import * as process from "process";
 import { io, Socket } from 'socket.io-client';
 import SimplePeer, { Instance as SimplePeerInstance } from 'simple-peer';
 import { useSearchParams } from 'react-router-dom';
+
+global.process = process;
 
 const MobileCameraPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -80,8 +84,8 @@ const MobileCameraPage: React.FC = () => {
         let peer: SimplePeerInstance;
         try {
           // Check if required browser APIs are available
-          if (!window.RTCPeerConnection) {
-            throw new Error('WebRTC is not supported in this browser');
+          if (!window.RTCPeerConnection || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error('WebRTC is not fully supported in this browser');
           }
           
           // Ensure stream is valid before creating peer
@@ -89,22 +93,35 @@ const MobileCameraPage: React.FC = () => {
             throw new Error('Camera stream is not available or has no tracks');
           }
           
-          // Create peer with more specific options
-          peer = new SimplePeer({
-            initiator: true,
-            trickle: false,
-            stream,
-            config: {
-              iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:global.stun.twilio.com:3478' }
-              ]
-            }
-          });
+          // Wrap peer creation in try-catch with more specific error handling
+          try {
+            peer = new SimplePeer({
+              initiator: true,
+              trickle: false,
+              stream,
+              config: {
+                iceServers: [
+                  { urls: 'stun:stun.l.google.com:19302' },
+                  { 
+                    urls: 'turn:global.turn.twilio.com:3478',
+                    username: 'your_username',  // Replace with your TURN credentials if needed
+                    credential: 'your_credential'
+                  }
+                ]
+              },
+              sdpTransform: (sdp) => {
+                // Ensure we're using a compatible video codec
+                return sdp.replace(/VP8/g, 'H264');
+              }
+            });
+          } catch (peerError: unknown) {
+            console.error('Error creating peer:', peerError);
+            throw new Error(`Failed to create peer: ${peerError instanceof Error ? peerError.message : String(peerError)}`);
+          }
           
           // Verify peer was created successfully
-          if (!peer) {
-            throw new Error('Failed to create peer connection');
+          if (!peer || typeof peer.signal !== 'function') {
+            throw new Error('Peer was created but is invalid');
           }
           
           peerRef.current = peer;
