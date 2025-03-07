@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import global from 'global'
 import * as process from "process";
 import { io, Socket } from 'socket.io-client';
-import SimplePeer, { Instance as SimplePeerInstance } from 'simple-peer';
+import SimplePeer from 'simple-peer';
 import { useSearchParams } from 'react-router-dom';
 
 global.process = process;
@@ -17,7 +17,7 @@ const MobileCameraPage: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const socketRef = useRef<Socket | null>(null);
-  const peerRef = useRef<SimplePeerInstance | null>(null);
+  const peerRef = useRef<SimplePeer.Instance | null>(null);
   const isComponentMounted = useRef<boolean>(true); // Track component mount state
   
   useEffect(() => {
@@ -81,7 +81,7 @@ const MobileCameraPage: React.FC = () => {
         }
         
         // Create WebRTC peer
-        let peer: SimplePeerInstance;
+        let peer: SimplePeer.Instance;
         try {
           // Check if required browser APIs are available
           if (!window.RTCPeerConnection || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -138,7 +138,7 @@ const MobileCameraPage: React.FC = () => {
         }
         
         // Safe signal function to prevent race conditions
-        const safeSignal = (data: unknown) => {
+        const safeSignal = (data: SimplePeer.SignalData) => {
           if (peerRef.current && isComponentMounted.current) {
             try {
               peerRef.current.signal(data);
@@ -172,7 +172,7 @@ const MobileCameraPage: React.FC = () => {
           }
         });
         
-        socket.on('signal', ({ signal }) => {
+        socket.on('signal', ({ signal }: { signal: SimplePeer.SignalData }) => {
           if (signal && isComponentMounted.current) {
             safeSignal(signal);
           }
