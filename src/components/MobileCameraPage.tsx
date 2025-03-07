@@ -102,11 +102,6 @@ const MobileCameraPage: React.FC = () => {
               config: {
                 iceServers: [
                   { urls: 'stun:stun.l.google.com:19302' },
-                  { 
-                    urls: 'turn:global.turn.twilio.com:3478',
-                    username: 'your_username',  // Replace with your TURN credentials if needed
-                    credential: 'your_credential'
-                  }
                 ]
               },
               sdpTransform: (sdp) => {
@@ -116,6 +111,14 @@ const MobileCameraPage: React.FC = () => {
             });
           } catch (peerError: unknown) {
             console.error('Error creating peer:', peerError);
+            // Add detailed error inspection
+            if (peerError instanceof Error) {
+              console.error('Error stack:', peerError.stack);
+              console.error('Error properties:', {
+                name: peerError.name,
+                message: peerError.message,
+              });
+            }
             throw new Error(`Failed to create peer: ${peerError instanceof Error ? peerError.message : String(peerError)}`);
           }
           
@@ -183,6 +186,20 @@ const MobileCameraPage: React.FC = () => {
             setStatus('error');
             setErrorMessage('Main application disconnected');
           }
+        });
+
+        const addLog = (message: string) => {
+          if (isComponentMounted.current) {
+            setErrorMessage(prev => `${prev}\n${message}`);
+          }
+        };
+
+        peer.on('iceCandidate', (candidate) => {
+          addLog(`ICE Candidate: ${JSON.stringify(candidate)}`);
+        });
+
+        peer.on('iceStateChange', (state) => {
+          addLog(`ICE State: ${state}`);
         });
       } catch (err) {
         console.error('Camera access error:', err);
