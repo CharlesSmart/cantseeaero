@@ -172,7 +172,7 @@ const MobileCameraPage: React.FC = () => {
           }
         });
         
-        socket.on('signal', ({ signal }: { signal: SimplePeer.SignalData }) => {
+        socket.on('signal', ({ signal }) => {
           if (signal && isComponentMounted.current) {
             safeSignal(signal);
           }

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import SimplePeer, { Instance as SimplePeerInstance } from 'simple-peer';
+import SimplePeer from 'simple-peer';
 import { Button } from '@/components/ui/button';
 import { Camera } from 'lucide-react';
 
@@ -16,7 +16,7 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const socketRef = useRef<Socket | null>(null);
-  const peerRef = useRef<SimplePeerInstance | null>(null);
+  const peerRef = useRef<SimplePeer.Instance | null>(null);
   const isComponentMounted = useRef<boolean>(true); // Track component mount state
   
   useEffect(() => {
@@ -52,7 +52,7 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
     };
     
     // Create WebRTC peer
-    let peer: SimplePeerInstance;
+    let peer: SimplePeer.Instance;
     try {
       // Check if required browser APIs are available
       if (!window.RTCPeerConnection) {
@@ -85,7 +85,7 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
     }
     
     // Safe signal function to prevent race conditions
-    const safeSignal = (data: unknown) => {
+    const safeSignal = (data: SimplePeer.SignalData) => {
       if (peerRef.current && isComponentMounted.current) {
         try {
           peerRef.current.signal(data);
@@ -142,7 +142,7 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
       }
     });
     
-    socket.on('signal', ({ signal }) => {
+    socket.on('signal', ({ signal }: { signal: SimplePeer.SignalData }) => {
       if (signal && isComponentMounted.current) {
         safeSignal(signal);
       }
