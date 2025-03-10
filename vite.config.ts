@@ -7,15 +7,19 @@ export default defineConfig({
   plugins: [
     react(),
     nodePolyfills({
-      include: [
-    '_stream_duplex',
-    '_stream_passthrough',
-    '_stream_readable',
-    '_stream_transform',
-    '_stream_writable',
-    'util',
-    'stream',
-    'buffer'
+    //   include: [
+    // '_stream_duplex',
+    // '_stream_passthrough',
+    // '_stream_readable',
+    // '_stream_transform',
+    // '_stream_writable',
+    // 'util',
+    // 'stream',
+    // 'buffer'
+    // ],
+    exclude: [
+      'fs',
+      'timers/promises'
     ]
   })
   ],
