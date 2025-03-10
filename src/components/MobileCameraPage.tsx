@@ -1,14 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import global from 'global'
 import * as process from "process";
-import { Buffer } from 'buffer';
 import { io, Socket } from 'socket.io-client';
 import * as SimplePeer from 'simple-peer';
 import { useSearchParams } from 'react-router-dom';
 
-(window as any).global = window;
-(window as any).process = process;
-(window as any).Buffer = Buffer;
 
 global.process = process;
 
