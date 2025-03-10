@@ -7,8 +7,14 @@ export default defineConfig({
   plugins: [
     react(),
     nodePolyfills({
-      protocolImports: true,
-    })
+      include: [
+    '_stream_duplex',
+    '_stream_passthrough',
+    '_stream_readable',
+    '_stream_transform',
+    '_stream_writable'
+    ]
+  })
   ],
   build: {
     target: 'esnext', // Allows for top-level await
