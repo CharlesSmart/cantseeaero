@@ -12,7 +12,10 @@ export default defineConfig({
     '_stream_passthrough',
     '_stream_readable',
     '_stream_transform',
-    '_stream_writable'
+    '_stream_writable',
+    'util',
+    'stream',
+    'buffer'
     ]
   })
   ],
