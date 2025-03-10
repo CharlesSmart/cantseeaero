@@ -220,6 +220,15 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, onConnected 
             <>
               <div className="mb-4 p-2 bg-white rounded-lg">
                 <QRCodeSVG value={getQRUrl()} size={200} />
+                <a
+                  href={getQRUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 block text-sm text-blue-600 hover:text-blue-800 transition-colors underline text-center"
+                  aria-label="Open direct connection link in new tab"
+                >
+                  Or open direct link
+                </a>
               </div>
               
               <p className="text-sm text-center mb-2">

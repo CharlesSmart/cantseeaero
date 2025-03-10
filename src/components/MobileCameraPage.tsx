@@ -93,7 +93,21 @@ const MobileCameraPage: React.FC = () => {
             throw new Error('Camera stream is not available or has no tracks');
           }
           
-          // Wrap peer creation in try-catch with more specific error handling
+          // Add these debug points before peer creation:
+          console.log('Stream state:', {
+            active: stream?.active,
+            tracks: stream?.getTracks().map(t => t.readyState),
+            id: stream?.id
+          });
+
+          // Verify WebRTC support
+          console.log('WebRTC support:', {
+            RTCPeerConnection: window.RTCPeerConnection,
+            mediaDevices: navigator.mediaDevices,
+            getUserMedia: navigator.mediaDevices.getUserMedia
+          });
+          
+          // Modify peer configuration:
           try {
             peer = new SimplePeer({
               initiator: true,
@@ -101,13 +115,26 @@ const MobileCameraPage: React.FC = () => {
               stream,
               config: {
                 iceServers: [
-                  { urls: 'stun:stun.l.google.com:19302' },
+                  { urls: 'stun:stun1.l.google.com:19302' },
+                  { urls: 'stun:stun2.l.google.com:19302' },
+                  // Add fallback TURN server if available
                 ]
               },
-              sdpTransform: (sdp) => {
-                // Ensure we're using a compatible video codec
-                return sdp.replace(/VP8/g, 'H264');
-              }
+              // Optional: Add these experimental flags
+              objectMode: true,
+              wrtc: typeof window !== 'undefined' ? {
+                RTCPeerConnection,
+                RTCSessionDescription,
+                RTCIceCandidate
+              } : undefined
+            });
+
+            // Add more debug listeners
+            peer.on('iceCandidate', (candidate) => {
+              console.log('ICE Candidate:', candidate);
+            });
+            peer.on('negotiationNeeded', () => {
+              console.log('Negotiation needed');
             });
           } catch (peerError: unknown) {
             console.error('Error creating peer:', peerError);
