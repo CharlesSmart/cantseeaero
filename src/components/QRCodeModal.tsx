@@ -53,7 +53,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, onConnected 
             console.log('✅ Session created:', sessionId);
             setSessionId(sessionId);
             setStatus('ready');
-            setTimeLeft(10);
+            setTimeLeft(120);
           });
           
           newSocket.on('mobile-connected', () => {
