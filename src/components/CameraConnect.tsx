@@ -93,6 +93,7 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
   }, [status, timeLeft]);
 
   const initializePeerConnection = () => {
+    console.log('Initializing peer connection...', { sessionId, socketRef: !!socketRef.current });
     if (!sessionId || !socketRef.current) return;
     
     const peer = new SimplePeer({
@@ -100,8 +101,8 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
       trickle: true,
       config: {
         iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:global.stun.twilio.com:3478' }
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' }
         ]
       }
     });
@@ -123,6 +124,12 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
         videoRef.current.srcObject = stream;
         setStatus('connected');
       }
+    });
+    
+    peer.on('error', (err) => {
+      console.error('Peer connection error:', err);
+      setStatus('error');
+      setErrorMessage('WebRTC connection failed');
     });
     
     // ... other peer handlers
