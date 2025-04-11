@@ -54,10 +54,16 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
           setStatus('ready');
         });
         
-        socket.on('mobile-connected', ({ sessionId: connectedSessionId }) => {
-          console.log('Mobile device connected, session ID:', connectedSessionId);
+        socket.on('mobile-connected', () => {
+          console.log('Mobile device connected, using session ID:', sessionId);
           setStatus('connecting');
-          initializePeerConnection(connectedSessionId);
+          if (sessionId) {
+            initializePeerConnection(sessionId);
+          } else {
+            console.error('No session ID available when mobile connected');
+            setStatus('error');
+            setErrorMessage('Connection failed - no session ID');
+          }
         });
         
         socket.on('signal', ({ signal }) => {
