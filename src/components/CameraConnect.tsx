@@ -60,7 +60,7 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
         });
         
         socket.on('signal', ({ signal }) => {
-          console.log('Received signal from mobile device');
+          console.log('Desktop received signal:', signal);
           peerRef.current?.signal(signal);
         });
         
@@ -110,6 +110,7 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
     
     // Peer event handlers
     peer.on('signal', data => {
+      console.log('Desktop sending signal:', data);
       socketRef.current?.emit('signal', { sessionId, signal: data });
     });
     
