@@ -54,10 +54,10 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
           setStatus('ready');
         });
         
-        socket.on('mobile-connected', () => {
-          console.log('Mobile device connected, waiting for WebRTC connection');
+        socket.on('mobile-connected', ({ sessionId: connectedSessionId }) => {
+          console.log('Mobile device connected, session ID:', connectedSessionId);
           setStatus('connecting');
-          initializePeerConnection();
+          initializePeerConnection(connectedSessionId);
         });
         
         socket.on('signal', ({ signal }) => {
@@ -93,9 +93,9 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
     }
   }, [status, timeLeft]);
 
-  const initializePeerConnection = () => {
-    console.log('Initializing peer connection...', { sessionId, socketRef: !!socketRef.current });
-    if (!sessionId || !socketRef.current) return;
+  const initializePeerConnection = (currentSessionId: string) => {
+    console.log('Initializing peer connection...', { sessionId: currentSessionId, socketRef: !!socketRef.current });
+    if (!currentSessionId || !socketRef.current) return;
     
     const peer = new SimplePeer({
       initiator: false,
@@ -113,7 +113,7 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
     // Peer event handlers
     peer.on('signal', data => {
       console.log('Desktop sending signal:', data);
-      socketRef.current?.emit('signal', { sessionId, signal: data });
+      socketRef.current?.emit('signal', { sessionId: currentSessionId, signal: data });
     });
     
     peer.on('connect', () => {
@@ -160,7 +160,7 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
     setSessionId(null);
     setErrorMessage(null);
     setTimeLeft(120);
-    initializePeerConnection();
+    initializePeerConnection(sessionId || '');
   };
 
   const handleCapture = () => {
