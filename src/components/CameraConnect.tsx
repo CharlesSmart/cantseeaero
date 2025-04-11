@@ -48,9 +48,9 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
           socket.emit('create-session');
         });
         
-        socket.on('session-created', ({ sessionId: newSessionId }) => {
-            console.log('Session created:', newSessionId);  // Add this log
-          setSessionId(newSessionId);
+        socket.on('session-created', ({ sessionId }) => {
+            console.log('Session created:', sessionId);  // Add this log
+          setSessionId(sessionId);
           setStatus('ready');
         });
         
