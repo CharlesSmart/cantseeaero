@@ -31,7 +31,7 @@ function App() {
   const useLinkedMeasurements = true;
 
   const [cameraSessionId, setCameraSessionId] = useState<string | null>(null);
-  const [showCameraPreview, setShowCameraPreview] = useState(false);
+  // const [showCameraPreview, setShowCameraPreview] = useState(false);
 
   useEffect(() => {
     const loadProfiles = async () => {
@@ -204,13 +204,13 @@ function App() {
 
   const handlePhoneCameraConnected = (sessionId: string) => {
     setCameraSessionId(sessionId);
-    setShowCameraPreview(true);
+    // setShowCameraPreview(true);
     console.log("connected")
   };
 
   const handleCameraDisconnect = () => {
     setCameraSessionId(null);
-    setShowCameraPreview(false);
+    // setShowCameraPreview(false);
   };
 
   const handleCameraCapture = async (imageData: string) => {
@@ -223,7 +223,7 @@ function App() {
     handleImageUpload(file);
     
     // Hide camera preview after capture
-    setShowCameraPreview(false);
+    // setShowCameraPreview(false);
   };
 
   return (
