@@ -20,6 +20,7 @@ type ConnectionStatus =
 
 const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }) => {
   const [status, setStatus] = useState<ConnectionStatus>('initializing');
+  const sessionIdRef = useRef<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(120); // QR code expiry timer
@@ -48,17 +49,18 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
           socket.emit('create-session');
         });
         
-        socket.on('session-created', ({ sessionId }) => {
-            console.log('Session created:', sessionId);  // Add this log
-          setSessionId(sessionId);
+        socket.on('session-created', ({ sessionId: newSessionId }) => {
+          console.log('Session created:', newSessionId);
+          sessionIdRef.current = newSessionId;
+          setSessionId(newSessionId);
           setStatus('ready');
         });
         
         socket.on('mobile-connected', () => {
-          console.log('Mobile device connected, using session ID:', sessionId);
+          console.log('Mobile device connected, using session ID:', sessionIdRef.current);
           setStatus('connecting');
-          if (sessionId) {
-            initializePeerConnection(sessionId);
+          if (sessionIdRef.current) {
+            initializePeerConnection(sessionIdRef.current);
           } else {
             console.error('No session ID available when mobile connected');
             setStatus('error');
