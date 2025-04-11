@@ -68,6 +68,9 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
           type: signal.type,
           // Only log SDP if it's an offer or answer
           details: 'type' in signal ? signal.type : 'ICE candidate',
+          isOffer: signal.type === 'offer',
+          isAnswer: signal.type === 'answer',
+          isCandidate: !signal.type,
           timestamp: new Date().toISOString()
         });
         if (signal && isComponentMounted.current) {
@@ -147,7 +150,9 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
       peer.on('signal', (data: SimplePeer.SignalData) => {
         console.log('[Peer] Generated signal:', {
           type: data.type,
-          details: 'type' in data ? data.type : 'ICE candidate',
+          isOffer: data.type === 'offer',
+          isAnswer: data.type === 'answer',
+          isCandidate: !data.type,
           timestamp: new Date().toISOString()
         });
         if (isComponentMounted.current) {
