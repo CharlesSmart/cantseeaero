@@ -24,6 +24,11 @@ const MobileCameraPage: React.FC = () => {
   // Add timestamp for tracking connection duration
   const connectionStartTime = useRef(Date.now());
   
+  // Move this useEffect outside of the other useEffect
+  useEffect(() => {
+    console.log('[Status] Changed to:', status, errorMessage ? `(${errorMessage})` : '');
+  }, [status, errorMessage]);
+
   useEffect(() => {
     console.log('[MobileCameraPage] Component mounted. Session ID:', sessionId);
     console.log('[MobileCameraPage] Initial status:', status);
@@ -232,11 +237,6 @@ const MobileCameraPage: React.FC = () => {
         setErrorMessage(`Socket disconnected: ${reason}`);
       }
     });
-
-    // Add status change tracking
-    useEffect(() => {
-      console.log('[Status] Changed to:', status, errorMessage ? `(${errorMessage})` : '');
-    }, [status, errorMessage]);
 
     return () => {
       // Mark component as unmounted

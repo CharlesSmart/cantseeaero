@@ -198,7 +198,7 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
         if (isComponentMounted.current) {
           setStatus('error');
           // Provide more context if available, e.g., err.code
-          const errorCode = (err as any).code ? ` (Code: ${(err as any).code})` : ''; 
+          const errorCode = (err as Error & { code?: string }).code ? ` (Code: ${(err as Error & { code?: string }).code})` : ''; 
           setErrorMessage(`Peer connection error: ${err.message}${errorCode}`);
         }
       });
