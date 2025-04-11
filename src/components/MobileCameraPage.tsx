@@ -21,10 +21,7 @@ const MobileCameraPage: React.FC = () => {
   const peerRef = useRef<SimplePeer.Instance | null>(null);
   const isComponentMounted = useRef<boolean>(true); // Track component mount state
   
-  // Add timestamp for tracking connection duration
-  const connectionStartTime = useRef(Date.now());
-  
-  // Move this useEffect outside of the other useEffect
+  // Log status changes
   useEffect(() => {
     console.log('[Status] Changed to:', status, errorMessage ? `(${errorMessage})` : '');
   }, [status, errorMessage]);
@@ -85,7 +82,11 @@ const MobileCameraPage: React.FC = () => {
       try {
         console.log('[Camera] Requesting camera access...');
         const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'environment', width: { ideal: 4096 }, height: { ideal: 2160 } },
+          video: { 
+            facingMode: 'environment',
+            width: { ideal: 1920 }, // Reduced from 4096 to more reasonable resolution
+            height: { ideal: 1080 }  // Reduced from 2160 to more reasonable resolution
+          },
           audio: false 
         });
         
@@ -93,8 +94,10 @@ const MobileCameraPage: React.FC = () => {
           tracks: stream.getTracks().map(t => ({
             kind: t.kind,
             enabled: t.enabled,
-            readyState: t.readyState
-          }))
+            readyState: t.readyState,
+            constraints: t.getConstraints()
+          })),
+          streamActive: stream.active
         });
         
         if (!isComponentMounted.current) {
@@ -103,107 +106,94 @@ const MobileCameraPage: React.FC = () => {
           return;
         }
         
+        // Verify stream is valid
+        if (!stream.active || stream.getVideoTracks().length === 0) {
+          throw new Error('Camera stream is not active or has no video tracks');
+        }
+        
         streamRef.current = stream;
         
         if (videoRef.current) {
           console.log('[Video] Attaching stream to video element');
           videoRef.current.srcObject = stream;
+          // Add loadedmetadata listener to verify video dimensions
+          videoRef.current.onloadedmetadata = () => {
+            console.log('[Video] Video metadata loaded:', {
+              videoWidth: videoRef.current?.videoWidth,
+              videoHeight: videoRef.current?.videoHeight
+            });
+          };
         }
         
-        // Create WebRTC peer
-        console.log('[Peer] Initializing WebRTC peer...');
-        try {
-          // WebRTC support check with detailed logging
-          const rtcSupport = {
-            RTCPeerConnection: !!window.RTCPeerConnection,
-            mediaDevices: !!navigator.mediaDevices,
-            getUserMedia: !!navigator.mediaDevices?.getUserMedia
-          };
-          console.log('[Peer] WebRTC support status:', rtcSupport);
-          
-          if (!window.RTCPeerConnection || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            throw new Error('WebRTC is not fully supported in this browser');
+        // Create WebRTC peer with enhanced logging
+        console.log('[Peer] Creating SimplePeer instance with stream...');
+        const peer = new SimplePeer({
+          initiator: true,
+          trickle: true,
+          stream,
+          config: {
+            iceServers: [
+              { urls: 'stun:stun1.l.google.com:19302' },
+              { urls: 'stun:stun2.l.google.com:19302' }
+            ]
           }
-          
-          console.log('[Peer] Creating SimplePeer instance...');
-          const peer = new SimplePeer({
-            initiator: true,
-            trickle: true,
-            stream,
-            config: {
-              iceServers: [
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' }
-              ]
+        });
+
+        console.log('[Peer] SimplePeer instance created, verifying stream attachment');
+        // Verify stream was attached to peer
+        const peerConnection = (peer as SimplePeer.Instance & { _pc: RTCPeerConnection })._pc;
+        const senders = peerConnection?.getSenders();
+        console.log('[Peer] RTCPeerConnection senders:', senders?.length || 0);
+
+        peer.on('connect', () => {
+          console.log('[Peer] Connection established, verifying stream state:', {
+            streamActive: stream.active,
+            trackCount: stream.getTracks().length,
+            trackStates: stream.getTracks().map(t => ({
+              kind: t.kind,
+              enabled: t.enabled,
+              readyState: t.readyState
+            }))
+          });
+        });
+        
+        peer.on('error', (err) => {
+          console.error('[Peer] Connection error:', err);
+          if (isComponentMounted.current) {
+            setStatus('error');
+            setErrorMessage(`Connection error: ${err.message}`);
+          }
+        });
+        
+        // Additional peer debugging events
+        peer.on('iceStateChange', (state) => {
+          console.log('[Peer] ICE connection state changed:', state);
+        });
+        
+        peer.on('negotiationNeeded', () => {
+          console.log('[Peer] Negotiation needed');
+        });
+        
+        peer.on('close', () => {
+          console.log('[Peer] Connection closed');
+        });
+        
+        // Socket signal handling
+        socket.on('signal', ({ signal }) => {
+          console.log('[Socket] Received signal from desktop:', {
+            type: signal.type,
+            signalType: signal.type === 'offer' ? 'OFFER' : 
+                       signal.type === 'answer' ? 'ANSWER' : 
+                       signal.type === 'candidate' ? 'ICE_CANDIDATE' : 'UNKNOWN'
+          });
+          if (signal && isComponentMounted.current) {
+            try {
+              peer.signal(signal);
+            } catch (err) {
+              console.error('[Peer] Error processing received signal:', err);
             }
-          });
-          
-          console.log('[Peer] SimplePeer instance created');
-          peerRef.current = peer;
-          
-          // Peer event listeners with enhanced logging
-          peer.on('signal', (data) => {
-            console.log('[Peer] Generated signal:', {
-              type: data.type,
-              signalType: data.type === 'offer' ? 'OFFER' : 
-                         data.type === 'answer' ? 'ANSWER' : 
-                         data.type === 'candidate' ? 'ICE_CANDIDATE' : 'UNKNOWN'
-            });
-            if (isComponentMounted.current) {
-              safeEmit('signal', { sessionId, signal: data });
-            }
-          });
-          
-          peer.on('connect', () => {
-            console.log('[Peer] Connection established!');
-            console.log('[Peer] Connection time:', Date.now() - connectionStartTime.current, 'ms');
-            if (isComponentMounted.current) {
-              setStatus('connected');
-            }
-          });
-          
-          peer.on('error', (err) => {
-            console.error('[Peer] Connection error:', err);
-            if (isComponentMounted.current) {
-              setStatus('error');
-              setErrorMessage(`Connection error: ${err.message}`);
-            }
-          });
-          
-          // Additional peer debugging events
-          peer.on('iceStateChange', (state) => {
-            console.log('[Peer] ICE connection state changed:', state);
-          });
-          
-          peer.on('negotiationNeeded', () => {
-            console.log('[Peer] Negotiation needed');
-          });
-          
-          peer.on('close', () => {
-            console.log('[Peer] Connection closed');
-          });
-          
-          // Socket signal handling
-          socket.on('signal', ({ signal }) => {
-            console.log('[Socket] Received signal from desktop:', {
-              type: signal.type,
-              signalType: signal.type === 'offer' ? 'OFFER' : 
-                         signal.type === 'answer' ? 'ANSWER' : 
-                         signal.type === 'candidate' ? 'ICE_CANDIDATE' : 'UNKNOWN'
-            });
-            if (signal && isComponentMounted.current) {
-              try {
-                peer.signal(signal);
-              } catch (err) {
-                console.error('[Peer] Error processing received signal:', err);
-              }
-            }
-          });
-          
-        } catch (err) {
-          console.error('[Peer] Initialization error:', err);
-          throw err; // Re-throw to be caught by outer try-catch
-        }
+          }
+        });
         
       } catch (err) {
         console.error('[Setup] Error during setup:', err);

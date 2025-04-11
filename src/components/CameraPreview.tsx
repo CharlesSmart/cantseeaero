@@ -64,11 +64,16 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
       });
       
       socket.on('signal', ({ signal }: { signal: SimplePeer.SignalData }) => {
-        console.log('[Socket] Received signal from peer:', signal);
+        console.log('[Socket] Received signal from peer:', {
+          type: signal.type,
+          // Only log SDP if it's an offer or answer
+          details: 'type' in signal ? signal.type : 'ICE candidate',
+          timestamp: new Date().toISOString()
+        });
         if (signal && isComponentMounted.current) {
           safeSignal(signal);
         } else {
-           console.log('[Socket] Ignoring received signal (component unmounted or signal null).');
+          console.log('[Socket] Ignoring received signal (component unmounted or signal null).');
         }
       });
       
@@ -139,8 +144,12 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
       peerRef.current = peer;
 
       // --- Add Peer Event Listeners ---
-      peer.on('signal', (data) => {
-        console.log('[Peer] Generated signal:', data);
+      peer.on('signal', (data: SimplePeer.SignalData) => {
+        console.log('[Peer] Generated signal:', {
+          type: data.type,
+          details: 'type' in data ? data.type : 'ICE candidate',
+          timestamp: new Date().toISOString()
+        });
         if (isComponentMounted.current) {
           safeEmit('signal', { sessionId, signal: data });
         } else {
@@ -149,11 +158,15 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
       });
       
       peer.on('connect', () => {
-         console.log('[Peer] Connection established!');
-         if (isComponentMounted.current) {
-             // Now we expect the stream
-             // Status is set to connected only when the stream arrives
-         }
+        const peerConnection = (peer as SimplePeer.Instance & { _pc: RTCPeerConnection })._pc;
+        console.log('[Peer] Connection established!', {
+          timestamp: new Date().toISOString(),
+          iceConnectionState: peerConnection?.iceConnectionState,
+          signalingState: peerConnection?.signalingState
+        });
+        if (isComponentMounted.current) {
+          console.log('[Peer] Waiting for stream...');
+        }
       });
 
       peer.on('stream', (stream) => {
@@ -211,6 +224,15 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
            setErrorMessage('Peer connection closed');
            onDisconnect(); // Notify parent
          }
+      });
+
+      // Add ICE connection state monitoring
+      peer.on('iceStateChange', (state) => {
+        console.log('[Peer] ICE connection state changed:', {
+          state,
+          timestamp: new Date().toISOString(),
+          peerConnected: peer.connected
+        });
       });
       // --- End Peer Event Listeners ---
 
