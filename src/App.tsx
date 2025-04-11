@@ -10,8 +10,9 @@ import { removeBG } from '@/utils/removeBG';
 import { demoProfiles } from '@/utils/demoProfiles';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ModeToggle } from '@/components/mode-toggle';
-import CameraPreview from '@/components/CameraPreview';
+// import CameraPreview from '@/components/CameraPreview';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import CameraConnect from '@/components/CameraConnect';
 
 function App() {
   const [profiles, setProfiles] = useState<Profile[]>([{
@@ -30,7 +31,7 @@ function App() {
   const [linkedMeasurementMm, setLinkedMeasurementMm] = useState<number | null>(null);
   const useLinkedMeasurements = true;
 
-  const [cameraSessionId, setCameraSessionId] = useState<string | null>(null);
+  // const [cameraSessionId, setCameraSessionId] = useState<string | null>(null);
   // const [showCameraPreview, setShowCameraPreview] = useState(false);
 
   useEffect(() => {
@@ -201,16 +202,8 @@ function App() {
   const imageUrlToUse = selectedProfile?.cachedImageUrl ?? selectedProfile?.imageUrl ?? '';
   const imageToUse = selectedProfile?.cachedImage ?? selectedProfile?.uploadedImage ?? null;
 
-
-  const handlePhoneCameraConnected = (sessionId: string) => {
-    setCameraSessionId(sessionId);
-    // setShowCameraPreview(true);
-    console.log("connected")
-  };
-
   const handleCameraDisconnect = () => {
-    setCameraSessionId(null);
-    // setShowCameraPreview(false);
+    // Camera disconnect handled by CameraConnect component
   };
 
   const handleCameraCapture = async (imageData: string) => {
@@ -236,7 +229,6 @@ function App() {
           onImageUpload={handleImageUpload} 
           uploadedImage={selectedProfile?.uploadedImage as File} 
           onLoadDemoProfiles={handleLoadDemoProfiles} 
-          onPhoneCameraConnected={handlePhoneCameraConnected}
           />
         } 
         {profiles.some(profile => profile.uploadedImage !== null) &&
@@ -247,8 +239,7 @@ function App() {
                 <h2 className="text-lg font-semibold">Phone Camera Preview</h2>
               </CardHeader>
               <CardContent>
-                <CameraPreview 
-                  sessionId={cameraSessionId}
+                <CameraConnect 
                   onCapture={handleCameraCapture}
                   onDisconnect={handleCameraDisconnect}
                 />
@@ -272,7 +263,6 @@ function App() {
             onSelectProfile={handleSelectProfile} 
             selectedProfileId={selectedProfileId}
             onDeleteProfile={handleDeleteProfile}
-            onPhoneCameraConnected={handlePhoneCameraConnected}
           />
           <MeasurementTool 
             imageUrl={imageUrlToUse} 

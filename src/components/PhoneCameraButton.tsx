@@ -1,35 +1,34 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Smartphone } from 'lucide-react';
-import QRCodeModal from './QRCodeModal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import CameraConnect from './CameraConnect';
 
 interface PhoneCameraButtonProps {
-  onCameraConnected: (sessionId: string) => void;
+  onCapture: (imageData: string) => void;
 }
 
-const PhoneCameraButton: React.FC<PhoneCameraButtonProps> = ({ onCameraConnected }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+const PhoneCameraButton: React.FC<PhoneCameraButtonProps> = ({ 
+  onCapture 
+}) => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  const handleOpenModal = () => {
-    setIsModalOpen(true);
+  const handleOpenDialog = () => {
+    setIsDialogOpen(true);
   };
   
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
   };
   
-  const handleConnected = (sessionId: string) => {
-    onCameraConnected(sessionId);
-    // Keep modal open for a moment to show success message
-    setTimeout(() => {
-      setIsModalOpen(false);
-    }, 1500);
+  const handleDisconnect = () => {
+    handleCloseDialog();
   };
-  
+
   return (
     <>
       <Button 
-        onClick={handleOpenModal}
+        onClick={handleOpenDialog}
         variant="outline"
         className="flex items-center"
         aria-label="Connect phone camera"
@@ -38,11 +37,18 @@ const PhoneCameraButton: React.FC<PhoneCameraButtonProps> = ({ onCameraConnected
         Phone Camera
       </Button>
       
-      <QRCodeModal 
-        isOpen={isModalOpen} 
-        onClose={handleCloseModal} 
-        onConnected={handleConnected} 
-      />
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <CameraConnect 
+            onCapture={(imageData) => {
+              onCapture(imageData);
+              // Optionally close the dialog after capture
+              // setIsDialogOpen(false);
+            }}
+            onDisconnect={handleDisconnect}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

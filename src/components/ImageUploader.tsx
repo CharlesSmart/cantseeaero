@@ -65,7 +65,15 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             </Button>
             
             {onPhoneCameraConnected && (
-              <PhoneCameraButton onCameraConnected={onPhoneCameraConnected} />
+              <PhoneCameraButton onCapture={(imageData) => {
+                // Convert base64 to File and call onImageUpload
+                fetch(imageData)
+                  .then(res => res.blob())
+                  .then(blob => {
+                    const file = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
+                    onImageUpload(file);
+                  });
+              }} />
             )}
           </div>
         </div>
