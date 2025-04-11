@@ -20,21 +20,78 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
   const isComponentMounted = useRef<boolean>(true); // Track component mount state
   
   useEffect(() => {
+    // Add a log to see when the effect runs and with what sessionId
+    console.log(`[CameraPreview Effect] Running effect. Session ID: ${sessionId}`);
+    
     if (!sessionId) {
+      console.log('[CameraPreview Effect] No session ID, setting error state.');
       setStatus('error');
       setErrorMessage('No session ID provided');
       return;
     }
     
+    // Reset state if sessionId changes
+    setStatus('connecting');
+    setErrorMessage(null);
+    isComponentMounted.current = true; // Ensure mount state is true when effect re-runs with a valid sessionId
+    
     // Connect to signaling server
     let socket: Socket;
     try {
+      console.log('[CameraPreview Effect] Attempting to connect socket...');
       socket = io('https://cantseeaero-signalling-server.onrender.com', {
         transports: ['polling', 'websocket']
       });
       socketRef.current = socket;
+      console.log('[CameraPreview Effect] Socket object created.');
+      
+      // --- Add Socket Event Listeners ---
+      socket.on('connect', () => {
+        if (!isComponentMounted.current) return;
+        console.log(`[Socket] Connected! Socket ID: ${socket.id}. Joining session: ${sessionId}`);
+        // Join the session room upon successful connection
+        safeEmit('join-session', { sessionId }); 
+      });
+      
+      socket.on('disconnect', (reason) => {
+        console.log(`[Socket] Disconnected. Reason: ${reason}`);
+        if (isComponentMounted.current) {
+          // Optionally handle socket disconnect differently, maybe attempt reconnect?
+          // For now, treating it as an error might be okay, but could be refined.
+          // setStatus('error'); 
+          // setErrorMessage(`Socket disconnected: ${reason}`);
+        }
+      });
+      
+      socket.on('signal', ({ signal }: { signal: SimplePeer.SignalData }) => {
+        console.log('[Socket] Received signal from peer:', signal);
+        if (signal && isComponentMounted.current) {
+          safeSignal(signal);
+        } else {
+           console.log('[Socket] Ignoring received signal (component unmounted or signal null).');
+        }
+      });
+      
+      socket.on('peer-disconnected', () => {
+        console.log('[Socket] Received peer-disconnected event.');
+        if (isComponentMounted.current) {
+          setStatus('error');
+          setErrorMessage('Phone disconnected');
+          onDisconnect(); // Ensure parent knows
+        }
+      });
+      
+      socket.on('connect_error', (error) => {
+        console.error('[Socket] Connection Error:', error);
+        if (isComponentMounted.current) {
+          setStatus('error');
+          setErrorMessage(`Socket connection error: ${error.message}`);
+        }
+      });
+      // --- End Socket Event Listeners ---
+
     } catch (err) {
-      console.error('Socket initialization error:', err);
+      console.error('[CameraPreview Effect] Socket initialization error:', err);
       setStatus('error');
       setErrorMessage(`Socket initialization error: ${err instanceof Error ? err.message : String(err)}`);
       return;
@@ -44,149 +101,189 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
     const safeEmit = (event: string, data: Record<string, unknown>) => {
       if (socketRef.current && isComponentMounted.current) {
         try {
+          console.log(`[Socket] Emitting ${event}:`, data);
           socketRef.current.emit(event, data);
         } catch (err) {
           console.error(`Error emitting ${event}:`, err);
         }
+      } else {
+         console.log(`[Socket] Cannot emit ${event} (socket null or component unmounted).`);
       }
     };
     
     // Create WebRTC peer
     let peer: SimplePeer.Instance;
     try {
-      // Check if required browser APIs are available
+      console.log('[CameraPreview Effect] Checking WebRTC support...');
       if (!window.RTCPeerConnection) {
         throw new Error('WebRTC is not supported in this browser');
       }
       
-      // Create peer with more specific options
+      console.log('[CameraPreview Effect] Creating SimplePeer instance (initiator: false)...');
       peer = new SimplePeer({
-        initiator: false,
+        initiator: false, // Desktop waits for the mobile initiator's offer
         trickle: true,
         config: {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:global.stun.twilio.com:3478' }
+            // Consider adding TURN servers here if needed
           ]
         }
       });
       
-      // Verify peer was created successfully
       if (!peer) {
-        throw new Error('Failed to create peer connection');
+        throw new Error('Failed to create peer connection (SimplePeer returned nullish)');
       }
-      
+      console.log('[CameraPreview Effect] SimplePeer instance created.');
       peerRef.current = peer;
+
+      // --- Add Peer Event Listeners ---
+      peer.on('signal', (data) => {
+        console.log('[Peer] Generated signal:', data);
+        if (isComponentMounted.current) {
+          safeEmit('signal', { sessionId, signal: data });
+        } else {
+          console.log('[Peer] Ignoring generated signal (component unmounted).');
+        }
+      });
+      
+      peer.on('connect', () => {
+         console.log('[Peer] Connection established!');
+         if (isComponentMounted.current) {
+             // Now we expect the stream
+             // Status is set to connected only when the stream arrives
+         }
+      });
+
+      peer.on('stream', (stream) => {
+        console.log('[Peer] Received stream:', stream);
+        if (videoRef.current && isComponentMounted.current) {
+          try {
+            console.log('[Peer] Attaching stream to video element.');
+            videoRef.current.srcObject = stream;
+            setStatus('connected'); // Set connected status *after* stream is attached
+          } catch (err) {
+            console.error('[Peer] Error setting video stream:', err);
+            if (isComponentMounted.current) {
+              setStatus('error');
+              setErrorMessage(`Error setting video stream: ${err instanceof Error ? err.message : String(err)}`);
+            }
+          }
+        } else {
+           console.log('[Peer] Cannot attach stream (videoRef null or component unmounted).');
+        }
+      });
+      
+      peer.on('data', (data) => {
+        if (!isComponentMounted.current) {
+           console.log('[Peer] Ignoring received data (component unmounted).');
+           return;
+        }
+        
+        try {
+          const message = JSON.parse(data.toString());
+          console.log('[Peer] Received data:', message);
+          if (message.type === 'capture') {
+            console.log('[Peer] Received capture command, capturing frame...');
+            captureFrame();
+          }
+        } catch (err) {
+          console.error('[Peer] Error parsing data:', err);
+        }
+      });
+      
+      peer.on('error', (err) => {
+        console.error('[Peer] Error:', err);
+        if (isComponentMounted.current) {
+          setStatus('error');
+          // Provide more context if available, e.g., err.code
+          const errorCode = (err as any).code ? ` (Code: ${(err as any).code})` : ''; 
+          setErrorMessage(`Peer connection error: ${err.message}${errorCode}`);
+        }
+      });
+
+      peer.on('close', () => {
+        console.log('[Peer] Connection closed.');
+         if (isComponentMounted.current) {
+           // Decide how to handle peer closing - maybe different from general error
+           setStatus('error'); 
+           setErrorMessage('Peer connection closed');
+           onDisconnect(); // Notify parent
+         }
+      });
+      // --- End Peer Event Listeners ---
+
     } catch (err) {
-      console.error('Peer initialization error:', err);
+      console.error('[CameraPreview Effect] Peer initialization error:', err);
       setStatus('error');
       setErrorMessage(`Peer initialization error: ${err instanceof Error ? err.message : String(err)}`);
+      // Clean up socket if peer fails to initialize
+      if (socketRef.current) {
+          socketRef.current.disconnect();
+          socketRef.current = null;
+      }
       return;
     }
     
     // Safe signal function to prevent race conditions
     const safeSignal = (data: SimplePeer.SignalData) => {
-      if (peerRef.current && isComponentMounted.current) {
+      if (peerRef.current && isComponentMounted.current && !peerRef.current.destroyed) {
         try {
+          console.log('[Peer] Signaling with received data:', data);
           peerRef.current.signal(data);
         } catch (err) {
-          console.error('Error signaling peer:', err);
+          console.error('[Peer] Error signaling peer:', err);
           if (isComponentMounted.current) {
             setStatus('error');
             setErrorMessage(`Signaling error: ${err instanceof Error ? err.message : String(err)}`);
           }
         }
+      } else {
+         console.log('[Peer] Cannot signal (peer null, destroyed, or component unmounted).');
       }
     };
     
-    peer.on('signal', (data) => {
-      if (isComponentMounted.current) {
-        safeEmit('signal', { sessionId, signal: data });
-      }
-    });
-    
-    peer.on('stream', (stream) => {
-      if (videoRef.current && isComponentMounted.current) {
-        try {
-          videoRef.current.srcObject = stream;
-          setStatus('connected');
-        } catch (err) {
-          console.error('Error setting video stream:', err);
-          if (isComponentMounted.current) {
-            setStatus('error');
-            setErrorMessage(`Error setting video stream: ${err instanceof Error ? err.message : String(err)}`);
-          }
-        }
-      }
-    });
-    
-    peer.on('data', (data) => {
-      if (!isComponentMounted.current) return;
-      
-      try {
-        const message = JSON.parse(data.toString());
-        if (message.type === 'capture') {
-          // Capture frame from video
-          captureFrame();
-        }
-      } catch (err) {
-        console.error('Error parsing data:', err);
-      }
-    });
-    
-    peer.on('error', (err) => {
-      console.error('Peer error:', err);
-      if (isComponentMounted.current) {
-        setStatus('error');
-        setErrorMessage(`Connection error: ${err.message}`);
-      }
-    });
-    
-    socket.on('signal', ({ signal }: { signal: SimplePeer.SignalData }) => {
-      if (signal && isComponentMounted.current) {
-        safeSignal(signal);
-      }
-    });
-    
-    socket.on('peer-disconnected', () => {
-      if (isComponentMounted.current) {
-        setStatus('error');
-        setErrorMessage('Phone disconnected');
-        onDisconnect();
-      }
-    });
-    
-    socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
-      if (isComponentMounted.current) {
-        setStatus('error');
-        setErrorMessage(`Connection error: ${error.message}`);
-      }
-    });
-    
+    // Cleanup function
     return () => {
+      console.log('[CameraPreview Cleanup] Running cleanup...');
       // Mark component as unmounted
-      isComponentMounted.current = false;
+      isComponentMounted.current = false; 
       
       if (peerRef.current) {
+        console.log('[CameraPreview Cleanup] Destroying peer...');
         try {
           peerRef.current.destroy();
         } catch (err) {
-          console.error('Error destroying peer:', err);
+          console.error('[CameraPreview Cleanup] Error destroying peer:', err);
         }
         peerRef.current = null;
+      } else {
+         console.log('[CameraPreview Cleanup] Peer already null.');
       }
       
       if (socketRef.current) {
+        console.log('[CameraPreview Cleanup] Disconnecting socket...');
         try {
+          // Optionally notify the server before disconnecting
+          // safeEmit('leave-session', { sessionId }); 
           socketRef.current.disconnect();
         } catch (err) {
-          console.error('Error disconnecting socket:', err);
+          console.error('[CameraPreview Cleanup] Error disconnecting socket:', err);
         }
         socketRef.current = null;
+      } else {
+         console.log('[CameraPreview Cleanup] Socket already null.');
       }
+      
+      // Clear video src
+      if (videoRef.current) {
+          videoRef.current.srcObject = null;
+      }
+      console.log('[CameraPreview Cleanup] Cleanup finished.');
     };
-  }, [sessionId, onDisconnect]);
+    // Make sure all dependencies that can change are listed
+  }, [sessionId, onCapture, onDisconnect]); 
   
   const captureFrame = () => {
     if (!videoRef.current || !isComponentMounted.current) return;
@@ -212,18 +309,28 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({ sessionId, onCapture, onD
   };
   
   const handleCaptureClick = () => {
-    if (!peerRef.current || !peerRef.current.connected) return;
+    if (!peerRef.current || !peerRef.current.connected || !isComponentMounted.current) {
+        console.log('[CaptureClick] Cannot send capture command (peer not ready or component unmounted).');
+        return;
+    }
     
     try {
-      // Send capture command to phone
+      console.log('[CaptureClick] Sending capture command to peer...');
       peerRef.current.send(JSON.stringify({ type: 'capture' }));
     } catch (err) {
-      console.error('Error sending capture command:', err);
-      setStatus('error');
-      setErrorMessage(`Error sending capture command: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('[CaptureClick] Error sending capture command:', err);
+      // Avoid setting global error state just for failing to send a command maybe?
+      // Or display a temporary error message near the button.
+      // setStatus('error'); 
+      // setErrorMessage(`Error sending capture command: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
   
+  // Log status changes
+  useEffect(() => {
+    console.log(`[CameraPreview Status] Status changed to: ${status}, Error: ${errorMessage || 'None'}`);
+  }, [status, errorMessage]);
+
   return (
     <div className="flex flex-col items-center">
       <div className="relative w-full max-w-md mb-4">
