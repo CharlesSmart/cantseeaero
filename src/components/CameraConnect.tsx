@@ -59,6 +59,11 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
           initializePeerConnection();
         });
         
+        socket.on('signal', ({ signal }) => {
+          console.log('Received signal from mobile device');
+          peerRef.current?.signal(signal);
+        });
+        
         // ... other socket handlers
       } catch (err) {
         setStatus('error');
