@@ -130,7 +130,7 @@ const MobileCameraPage: React.FC = () => {
         const peer = new SimplePeer({
           initiator: true,
           trickle: true,
-          stream,
+          stream: stream,
           config: {
             iceServers: [
               { urls: 'stun:stun1.l.google.com:19302' },
