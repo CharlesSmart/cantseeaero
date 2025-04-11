@@ -241,7 +241,7 @@ function App() {
         } 
         {profiles.some(profile => profile.uploadedImage !== null) &&
           <>
-          {showCameraPreview && (
+          {/* {showCameraPreview && ( */}
             <Card className="max-w-md mx-auto mb-4 mt-4">
               <CardHeader>
                 <h2 className="text-lg font-semibold">Phone Camera Preview</h2>
@@ -254,7 +254,7 @@ function App() {
                 />
               </CardContent>
             </Card>
-          )}
+          {/* )} */}
           <PixelCounter 
             imageFile={imageToUse as File}
             onPixelCountUpdate={handlePixelCountUpdate}
