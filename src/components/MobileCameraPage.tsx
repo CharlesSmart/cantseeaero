@@ -133,8 +133,8 @@ const MobileCameraPage: React.FC = () => {
           stream: stream,
           config: {
             iceServers: [
-              { urls: 'stun:stun1.l.google.com:19302' },
-              { urls: 'stun:stun2.l.google.com:19302' }
+              { urls: 'stun:freestun.net:3478' },
+              // { urls: 'stun:stun2.l.google.com:19302' }
             ]
           }
         });

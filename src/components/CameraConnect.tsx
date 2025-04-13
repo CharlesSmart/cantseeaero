@@ -104,14 +104,15 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
   const initializePeerConnection = (currentSessionId: string) => {
     console.log('Initializing peer connection...', { sessionId: currentSessionId, socketRef: !!socketRef.current });
     if (!currentSessionId || !socketRef.current) return;
+    console.log('stopped as no currentsession ')
     
     const peer = new SimplePeer({
       initiator: false,
       trickle: true,
       config: {
         iceServers: [
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' }
+            { urls: 'stun:freestun.net:3478' },
+            // { urls: 'stun:stun2.l.google.com:19302' }
         ]
       }
     });
