@@ -144,6 +144,15 @@ const MobileCameraPage: React.FC = () => {
         const peerConnection = (peer as SimplePeer.Instance & { _pc: RTCPeerConnection })._pc;
         const senders = peerConnection?.getSenders();
         console.log('[Peer] RTCPeerConnection senders:', senders?.length || 0);
+        
+        // Add this critical signal handler
+        peer.on('signal', data => {
+          console.log('[Peer] Mobile sending signal:', data);
+          socketRef.current?.emit('signal', { 
+            sessionId: sessionId, 
+            signal: data 
+          });
+        });
 
         peer.on('connect', () => {
           console.log('[Peer] Connection established, verifying stream state:', {
