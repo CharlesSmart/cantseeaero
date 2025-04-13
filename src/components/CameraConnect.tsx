@@ -106,7 +106,7 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
     if (!currentSessionId || !socketRef.current) return;
     
     const peer = new SimplePeer({
-      initiator: false,
+      initiator: true,
       trickle: true,
     //   config: {
     //     iceServers: [

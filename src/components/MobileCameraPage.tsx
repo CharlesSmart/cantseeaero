@@ -128,7 +128,7 @@ const MobileCameraPage: React.FC = () => {
         // Create WebRTC peer with enhanced logging
         console.log('[Peer] Creating SimplePeer instance with stream...');
         const peer = new SimplePeer({
-          initiator: true,
+          initiator: false,
           trickle: true,
           stream: stream,
           // config: {
