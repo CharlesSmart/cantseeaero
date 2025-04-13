@@ -131,12 +131,12 @@ const MobileCameraPage: React.FC = () => {
           initiator: false,
           trickle: true,
           stream: stream,
-          // config: {
-          //   iceServers: [
-          //     { urls: 'stun:freestun.net:3478' },
-          //     // { urls: 'stun:stun2.l.google.com:19302' }
-          //   ]
-          // }
+          config: {
+            iceServers: [
+              { urls: 'stun:freestun.net:3478' },
+              // { urls: 'stun:stun2.l.google.com:19302' }
+            ]
+          }
         });
 
         console.log('[Peer] SimplePeer instance created, verifying stream attachment');

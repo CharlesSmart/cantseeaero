@@ -108,12 +108,12 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
     const peer = new SimplePeer({
       initiator: true,
       trickle: true,
-    //   config: {
-    //     iceServers: [
-    //         { urls: 'stun:freestun.net:3478' },
-    //         // { urls: 'stun:stun2.l.google.com:19302' }
-    //     ]
-    //   }
+      config: {
+        iceServers: [
+            { urls: 'stun:freestun.net:3478' },
+            // { urls: 'stun:stun2.l.google.com:19302' }
+        ]
+      }
     });
     
     peerRef.current = peer;
