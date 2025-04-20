@@ -177,6 +177,7 @@ const MobileCameraPage: React.FC = () => {
     const safeEmit = (event: string, data: Record<string, unknown>) => {
       if (socketRef.current && isComponentMounted.current) {
         try {
+          console.log('trying to emit')
           socketRef.current.emit(event, data);
         } catch (err) {
           console.error(`Error emitting ${event}:`, err);
