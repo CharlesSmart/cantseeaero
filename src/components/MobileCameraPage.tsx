@@ -97,6 +97,7 @@ const MobileCameraPage: React.FC = () => {
             ]
           }
         });
+        peerRef.current = peer;
 
         console.log('[Peer] SimplePeer instance created, verifying stream attachment');
         // Verify stream was attached to peer
@@ -123,6 +124,9 @@ const MobileCameraPage: React.FC = () => {
               readyState: t.readyState
             }))
           });
+          if (isComponentMounted.current) {
+            setStatus('connected');
+          }
         });
         
         peer.on('error', (err) => {
@@ -189,6 +193,8 @@ const MobileCameraPage: React.FC = () => {
       console.log('[Socket] Received desktop signal:', signal);
       if (peerRef.current) {
         peerRef.current.signal(signal);
+      } else {
+        console.warn('[Socket] Received signal but peerRef is not yet set.');
       }
     });
     
