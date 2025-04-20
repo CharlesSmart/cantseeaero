@@ -195,8 +195,6 @@ const MobileCameraPage: React.FC = () => {
           }
         });
         
-        socketRef.current?.emit('join-session', { sessionId });
-
       } catch (err) {
         console.error('[Setup] Error during setup:', err);
         if (isComponentMounted.current) {
