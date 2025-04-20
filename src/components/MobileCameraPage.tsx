@@ -133,8 +133,8 @@ const MobileCameraPage: React.FC = () => {
           stream: stream,
           config: {
             iceServers: [
-              { urls: 'stun:freestun.net:3478' },
-              // { urls: 'stun:stun2.l.google.com:19302' }
+              { urls: 'stun:stun.l.google.com:19302' },
+              { urls: 'stun:stun1.l.google.com:19302' }
             ]
           }
         });
@@ -189,18 +189,9 @@ const MobileCameraPage: React.FC = () => {
         
         // Socket signal handling
         socket.on('signal', ({ signal }) => {
-          console.log('[Socket] Received signal from desktop:', {
-            type: signal.type,
-            signalType: signal.type === 'offer' ? 'OFFER' : 
-                       signal.type === 'answer' ? 'ANSWER' : 
-                       signal.type === 'candidate' ? 'ICE_CANDIDATE' : 'UNKNOWN'
-          });
-          if (signal && isComponentMounted.current) {
-            try {
-              peer.signal(signal);
-            } catch (err) {
-              console.error('[Peer] Error processing received signal:', err);
-            }
+          console.log('[Socket] Received desktop signal:', signal);
+          if (peerRef.current) {
+            peerRef.current.signal(signal);
           }
         });
         
