@@ -60,7 +60,11 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
           console.log('Mobile device connected, using session ID:', sessionIdRef.current);
           setStatus('connecting');
           if (sessionIdRef.current) {
-            initializePeerConnection(sessionIdRef.current);
+            // Add 1 second delay before initializing peer
+            setTimeout(() => {
+              console.log('Initializing peer after delay...');
+              initializePeerConnection(sessionIdRef.current!);
+            }, 5000);
           } else {
             console.error('No session ID available when mobile connected');
             setStatus('error');
