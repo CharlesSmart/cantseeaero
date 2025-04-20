@@ -27,55 +27,14 @@ const MobileCameraPage: React.FC = () => {
   }, [status, errorMessage]);
 
   useEffect(() => {
-    console.log('[MobileCameraPage] Component mounted. Session ID:', sessionId);
-    console.log('[MobileCameraPage] Initial status:', status);
+    const initializeCamera = async () => {
+      console.log('[MobileCameraPage] Component mounted. Session ID:', sessionId);
+      console.log('[MobileCameraPage] Initial status:', status);
 
-    if (!sessionId) {
-      console.error('[MobileCameraPage] No sessionId provided in URL');
-      setStatus('error');
-      setErrorMessage('No session ID provided');
-      return;
-    }
-    
-    // Connect to signaling server
-    let socket: Socket;
-    try {
-      console.log('[Socket] Attempting to connect to signaling server...');
-      socket = io('https://cantseeaero-signalling-server.onrender.com', {
-        transports: ['polling', 'websocket']
-      });
-      socketRef.current = socket;
-      console.log('[Socket] Socket instance created');
-    } catch (err) {
-      console.error('[Socket] Initialization error:', err);
-      setStatus('error');
-      setErrorMessage(`Socket initialization error: ${err instanceof Error ? err.message : String(err)}`);
-      return;
-    }
-    
-    // Safe emit function to prevent calling methods on undefined objects
-    const safeEmit = (event: string, data: Record<string, unknown>) => {
-      if (socketRef.current && isComponentMounted.current) {
-        try {
-          socketRef.current.emit(event, data);
-        } catch (err) {
-          console.error(`Error emitting ${event}:`, err);
-        }
-      }
-    };
-    
-    socket.on('connect', () => {
-      console.log('[Socket] Connected successfully');
-      console.log('[Socket] Joining session:', sessionId);
-      if (isComponentMounted.current) {
-        safeEmit('join-session', { sessionId });
-      }
-    });
-    
-    socket.on('connection-successful', async () => {
-      console.log('[Socket] Received connection-successful event');
-      if (!isComponentMounted.current) {
-        console.log('[Socket] Component unmounted, ignoring connection-successful');
+      if (!sessionId) {
+        console.error('[MobileCameraPage] No sessionId provided in URL');
+        setStatus('error');
+        setErrorMessage('No session ID provided');
         return;
       }
       
@@ -187,14 +146,6 @@ const MobileCameraPage: React.FC = () => {
           console.log('[Peer] Connection closed');
         });
         
-        // Socket signal handling
-        socket.on('signal', ({ signal }) => {
-          console.log('[Socket] Received desktop signal:', signal);
-          if (peerRef.current) {
-            peerRef.current.signal(signal);
-          }
-        });
-        
       } catch (err) {
         console.error('[Setup] Error during setup:', err);
         if (isComponentMounted.current) {
@@ -202,6 +153,60 @@ const MobileCameraPage: React.FC = () => {
           setErrorMessage(`Setup error: ${err instanceof Error ? err.message : String(err)}`);
         }
       }
+    };
+
+    initializeCamera();
+
+    // Connect to signaling server
+    let socket: Socket;
+    try {
+      console.log('[Socket] Attempting to connect to signaling server...');
+      socket = io('https://cantseeaero-signalling-server.onrender.com', {
+        transports: ['polling', 'websocket']
+      });
+      socketRef.current = socket;
+      console.log('[Socket] Socket instance created');
+    } catch (err) {
+      console.error('[Socket] Initialization error:', err);
+      setStatus('error');
+      setErrorMessage(`Socket initialization error: ${err instanceof Error ? err.message : String(err)}`);
+      return;
+    }
+    
+    // Safe emit function to prevent calling methods on undefined objects
+    const safeEmit = (event: string, data: Record<string, unknown>) => {
+      if (socketRef.current && isComponentMounted.current) {
+        try {
+          socketRef.current.emit(event, data);
+        } catch (err) {
+          console.error(`Error emitting ${event}:`, err);
+        }
+      }
+    };
+    // Socket signal handling
+    socket.on('signal', ({ signal }) => {
+      console.log('[Socket] Received desktop signal:', signal);
+      if (peerRef.current) {
+        peerRef.current.signal(signal);
+      }
+    });
+    
+    socket.on('connect', () => {
+      console.log('[Socket] Connected successfully');
+      console.log('[Socket] Joining session:', sessionId);
+      if (isComponentMounted.current) {
+        safeEmit('join-session', { sessionId });
+      }
+    });
+    
+    socket.on('connection-successful', async () => {
+      console.log('[Socket] Received connection-successful event');
+      if (!isComponentMounted.current) {
+        console.log('[Socket] Component unmounted, ignoring connection-successful');
+        return;
+      }
+      
+      
     });
     
     socket.on('session-not-found', () => {
