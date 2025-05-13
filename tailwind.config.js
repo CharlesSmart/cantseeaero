@@ -60,7 +60,10 @@ export default {
 				DEFAULT: 'hsl(var(--info))',
 				foreground: 'hsl(var(--info-foreground))'
 			},
-  		}
+  		},
+		borderWidth: {
+		tiny: '0.5px'
+		}
   	}
   },
   plugins: [require("tailwindcss-animate")],

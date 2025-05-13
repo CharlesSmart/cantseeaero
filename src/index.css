@@ -33,41 +33,16 @@ body {
   min-height: 100vh;
 }
 
-
-
-
-/* button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-} */
 button:hover {
   border-color: #646cff;
 }
-/* button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-} */
 
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
     background-color: #ffffff;
   }
-  /* a:hover {
-    color: #747bff;
-  } */
 }
-  /* button {
-    background-color: #f9f9f9;
-  } */
-
 
 @layer base {
   :root {
@@ -97,7 +72,7 @@ button:focus-visible {
     --chart-5: 27 87% 67%;
     --radius: 1rem;
     --info: 215 95% 93%;
-    --info-foreground: 215 90% 61%;
+    --info-foreground: 221 83% 51%;
   }
   .dark {
     --background: 240 10% 3.9%;
@@ -124,6 +99,8 @@ button:focus-visible {
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    --info: 226 57% 21%;
+    --info-foreground: 212 96% 78%;
   }
 }
 

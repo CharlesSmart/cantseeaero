@@ -30,11 +30,11 @@ export const DataRowWithInput: React.FC<{
                     type='number'
                     value={inputValue}
                     onChange={onChange}
-                    className={`w-20 justify-self-end font-mono disabled:text-foreground disabled:opacity-100 ${variant === 'priority' ? 'bg-blue-50 border-none text-blue-700' : 'bg-card'}`}
+                    className={`w-20 justify-self-end font-mono disabled:text-foreground disabled:opacity-100 ${variant === 'priority' ? 'bg-info border-none text-info-foreground' : 'bg-card'}`}
                     disabled={disabled}
                     aria-label={`${label} value in ${unit || ''}`}
                 />
-                {unit && <span className={`absolute right-8 text-right ${variant === 'priority' ? 'text-blue-500' : 'text-muted-foreground'}`} aria-hidden="true">{unit}</span>}
+                {unit && <span className={`absolute right-8 text-right ${variant === 'priority' ? 'text-info-foreground' : 'text-muted-foreground'}`} aria-hidden="true">{unit}</span>}
             </div>
         </div>
     );
