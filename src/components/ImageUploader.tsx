@@ -18,7 +18,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   onImageUpload, 
   uploadedImage, 
   className,
-  onPhoneCameraConnected 
 }) => {
   const [error, setError] = useState<string | null>(null);
   const errorId = "image-upload-error";
@@ -64,7 +63,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               Upload Image
             </Button>
             
-            {onPhoneCameraConnected && (
+            {/* {onPhoneCameraConnected && ( */}
               <PhoneCameraButton onCapture={(imageData) => {
                 // Convert base64 to File and call onImageUpload
                 fetch(imageData)
@@ -74,7 +73,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                     onImageUpload(file);
                   });
               }} />
-            )}
+            {/* )} */}
           </div>
         </div>
       }

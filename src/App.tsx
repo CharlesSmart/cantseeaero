@@ -32,7 +32,7 @@ function App() {
   const useLinkedMeasurements = true;
 
   // const [cameraSessionId, setCameraSessionId] = useState<string | null>(null);
-  // const [showCameraPreview, setShowCameraPreview] = useState(false);
+  const [showCameraPreview, setShowCameraPreview] = useState(false);
 
   useEffect(() => {
     const loadProfiles = async () => {
@@ -204,6 +204,7 @@ function App() {
 
   const handleCameraDisconnect = () => {
     // Camera disconnect handled by CameraConnect component
+    setShowCameraPreview(false);
   };
 
   const handleCameraCapture = async (imageData: string) => {
@@ -214,9 +215,7 @@ function App() {
     
     // Use the existing image upload handler
     handleImageUpload(file);
-    
-    // Hide camera preview after capture
-    // setShowCameraPreview(false);
+
   };
 
   return (
@@ -233,7 +232,7 @@ function App() {
         } 
         {profiles.some(profile => profile.uploadedImage !== null) &&
           <>
-          {/* {showCameraPreview && ( */}
+          {showCameraPreview && (
             <Card className="max-w-md mx-auto mb-4 mt-4">
               <CardHeader>
                 <h2 className="text-lg font-semibold">Phone Camera Preview</h2>
@@ -245,7 +244,7 @@ function App() {
                 />
               </CardContent>
             </Card>
-          {/* )} */}
+          )}
           <PixelCounter 
             imageFile={imageToUse as File}
             onPixelCountUpdate={handlePixelCountUpdate}

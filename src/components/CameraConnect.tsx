@@ -193,8 +193,14 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
   };
 
   const getQRUrl = () => {
+    //Prod
     const baseUrl = window.location.origin;
     return `${baseUrl}/mobile-camera?sessionId=${sessionId}`;
+
+    //Dev
+    // const localIpAddress = '192.168.4.25'; // IMPORTANT: Replace this!
+    // const port = 5173; // Ensure this is the port your mobile-camera page is served on
+    // return `http://${localIpAddress}:${port}/mobile-camera?sessionId=${sessionId}`;
   };
   return (
     <div className="flex flex-col items-center">
