@@ -3,7 +3,7 @@ import global from 'global'
 import * as process from "process";
 import { io, Socket } from 'socket.io-client';
 import SimplePeer from 'simple-peer';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 
 global.process = process;
@@ -11,6 +11,7 @@ global.process = process;
 const MobileCameraPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('sessionId');
+  const navigate = useNavigate();
   
   const [status, setStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -19,7 +20,6 @@ const MobileCameraPage: React.FC = () => {
   const streamRef = useRef<MediaStream | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const peerRef = useRef<SimplePeer.Instance | null>(null);
-  const isComponentMounted = useRef<boolean>(true); // Track component mount state
   
   // Log status changes
   useEffect(() => {
@@ -27,6 +27,9 @@ const MobileCameraPage: React.FC = () => {
   }, [status, errorMessage]);
 
   useEffect(() => {
+    const abortController = new AbortController();  // Add abort controller
+    let unmounted = false;  // Direct mount state tracking
+
     const initializeCamera = async () => {
       console.log('[MobileCameraPage] Component mounted. Session ID:', sessionId);
       console.log('[MobileCameraPage] Initial status:', status);
@@ -40,13 +43,13 @@ const MobileCameraPage: React.FC = () => {
       
       try {
         console.log('[Camera] Requesting camera access...');
-        const stream = await navigator.mediaDevices.getUserMedia({ 
+        const stream = await navigator.mediaDevices.getUserMedia({
           video: { 
             facingMode: 'environment',
-            width: { ideal: 4096 }, // Reduced from 4096 to more reasonable resolution
-            height: { ideal: 2160 }  // Reduced from 2160 to more reasonable resolution
+            width: { ideal: 4096 },
+            height: { ideal: 2160 }
           },
-          audio: false 
+          audio: false
         });
         
         console.log('[Camera] Camera access granted:', {
@@ -59,8 +62,8 @@ const MobileCameraPage: React.FC = () => {
           streamActive: stream.active
         });
         
-        if (!isComponentMounted.current) {
-          console.log('[Camera] Component unmounted during camera access, cleaning up');
+        if (unmounted) {
+          console.log('[Camera] Component unmounted before stream processing');
           stream.getTracks().forEach(track => track.stop());
           return;
         }
@@ -124,14 +127,14 @@ const MobileCameraPage: React.FC = () => {
               readyState: t.readyState
             }))
           });
-          if (isComponentMounted.current) {
+          if (!unmounted) {
             setStatus('connected');
           }
         });
         
         peer.on('error', (err) => {
           console.error('[Peer] Connection error:', err);
-          if (isComponentMounted.current) {
+          if (!unmounted) {
             setStatus('error');
             setErrorMessage(`Connection error: ${err.message}`);
           }
@@ -151,8 +154,12 @@ const MobileCameraPage: React.FC = () => {
         });
         
       } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          console.log('[Camera] Camera request aborted');
+          return;
+        }
         console.error('[Setup] Error during setup:', err);
-        if (isComponentMounted.current) {
+        if (!unmounted) {
           setStatus('error');
           setErrorMessage(`Setup error: ${err instanceof Error ? err.message : String(err)}`);
         }
@@ -179,7 +186,7 @@ const MobileCameraPage: React.FC = () => {
     
     // Safe emit function to prevent calling methods on undefined objects
     const safeEmit = (event: string, data: Record<string, unknown>) => {
-      if (socketRef.current && isComponentMounted.current) {
+      if (socketRef.current && !unmounted) {
         try {
           console.log('trying to emit')
           socketRef.current.emit(event, data);
@@ -201,14 +208,14 @@ const MobileCameraPage: React.FC = () => {
     socket.on('connect', () => {
       console.log('[Socket] Connected successfully');
       console.log('[Socket] Joining session:', sessionId);
-      if (isComponentMounted.current) {
+      if (!unmounted) {
         safeEmit('join-session', { sessionId });
       }
     });
     
     socket.on('connection-successful', async () => {
       console.log('[Socket] Received connection-successful event');
-      if (!isComponentMounted.current) {
+      if (unmounted) {
         console.log('[Socket] Component unmounted, ignoring connection-successful');
         return;
       }
@@ -218,7 +225,7 @@ const MobileCameraPage: React.FC = () => {
     
     socket.on('session-not-found', () => {
       console.log('[Socket] Session not found:', sessionId);
-      if (isComponentMounted.current) {
+      if (!unmounted) {
         setStatus('error');
         setErrorMessage('Session not found or expired');
       }
@@ -226,7 +233,7 @@ const MobileCameraPage: React.FC = () => {
     
     socket.on('connect_error', (error) => {
       console.error('[Socket] Connection error:', error);
-      if (isComponentMounted.current) {
+      if (!unmounted) {
         setStatus('error');
         setErrorMessage(`Connection error: ${error.message}`);
       }
@@ -234,15 +241,21 @@ const MobileCameraPage: React.FC = () => {
     
     socket.on('disconnect', (reason) => {
       console.log('[Socket] Disconnected:', reason);
-      if (isComponentMounted.current) {
+      if (!unmounted) {
         setStatus('error');
         setErrorMessage(`Socket disconnected: ${reason}`);
       }
     });
 
+    // Add abort handling separately
+    abortController.signal.addEventListener('abort', () => {
+      streamRef.current?.getTracks().forEach(track => track.stop());
+    });
+
     return () => {
-      // Mark component as unmounted
-      isComponentMounted.current = false;
+      console.log('[Cleanup] Starting component unmount');
+      unmounted = true;
+      abortController.abort();  // Abort pending media requests
       
       // Clean up
       if (streamRef.current) {
@@ -271,7 +284,7 @@ const MobileCameraPage: React.FC = () => {
         socketRef.current = null;
       }
     };
-  }, [sessionId]);
+  }, [sessionId, navigate]);
   
   const handleCapture = () => {
     if (peerRef.current && peerRef.current.connected) {

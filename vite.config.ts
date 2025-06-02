@@ -2,6 +2,7 @@ import path from "path";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
+import fs from 'fs'
 
 export default defineConfig({
   plugins: [
@@ -10,10 +11,6 @@ export default defineConfig({
       include: [
     'buffer'
     ],
-    // exclude: [
-    //   'fs',
-    //   'timers/promises'
-    // ],
   })
   ],
   build: {
@@ -29,5 +26,12 @@ export default defineConfig({
   },
   define: {
     global: {}
+  },
+  server: {
+    https: {
+      key: fs.readFileSync('./key.pem'),
+      cert: fs.readFileSync('./cert.pem')
+    },
+    host: '0.0.0.0' // Allow external connections
   }
 });
