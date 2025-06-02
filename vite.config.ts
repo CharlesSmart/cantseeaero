@@ -27,11 +27,11 @@ export default defineConfig({
   define: {
     global: {}
   },
-  server: {
+  server: process.env.NODE_ENV === 'development' ? {
     https: {
       key: fs.readFileSync('./key.pem'),
       cert: fs.readFileSync('./cert.pem')
     },
-    host: '0.0.0.0' // Allow external connections
-  }
+    host: '0.0.0.0'
+  } : {}
 });
