@@ -1,10 +1,9 @@
 import React, { useRef, useState } from 'react';
 import { Input } from "@/components/ui/input";
-import { AlertCircle, Upload } from "lucide-react";
+import { AlertCircle, Upload, Camera } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from '@/components/ui/button';
 import classNames from 'classnames'; // Import classnames utility
-import PhoneCameraButton from './PhoneCameraButton';
 
 
 interface ImageUploaderProps {
@@ -12,12 +11,14 @@ interface ImageUploaderProps {
   uploadedImage: (File | null); // Add uploadedImage to props
   className?: string;
   onPhoneCameraConnected?: (sessionId: string) => void;
+  onOpenCamera?: () => void;
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({ 
   onImageUpload, 
   uploadedImage, 
   className,
+  onOpenCamera,
 }) => {
   const [error, setError] = useState<string | null>(null);
   const errorId = "image-upload-error";
@@ -45,6 +46,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     hiddenFileInput.current?.click();
   };
 
+  const handleCameraClick = () => {
+    onOpenCamera?.();
+  };
+
   return (
     <div>
       {!uploadedImage &&
@@ -62,18 +67,14 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               <Upload className='w-4 h-4 mr-2' aria-hidden="true" />
               Upload Image
             </Button>
-            
-            {/* {onPhoneCameraConnected && ( */}
-              <PhoneCameraButton onCapture={(imageData) => {
-                // Convert base64 to File and call onImageUpload
-                fetch(imageData)
-                  .then(res => res.blob())
-                  .then(blob => {
-                    const file = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
-                    onImageUpload(file);
-                  });
-              }} />
-            {/* )} */}
+            <Button 
+              onClick={handleCameraClick}
+              variant="outline"
+              aria-label="Connect phone camera"
+            >
+              <Camera className='w-4 h-4 mr-2' aria-hidden="true" />
+              Camera
+            </Button>
           </div>
         </div>
       }

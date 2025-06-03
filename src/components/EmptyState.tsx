@@ -7,13 +7,15 @@ type EmptyStateProps = {
   uploadedImage: File | null;
   onLoadDemoProfiles: () => void;
   onPhoneCameraConnected?: (sessionId: string) => void;
+  onOpenCamera?: () => void;
 };
 
 const EmptyState: React.FC<EmptyStateProps> = ({ 
   onImageUpload, 
   uploadedImage, 
   onLoadDemoProfiles,
-  onPhoneCameraConnected
+  onPhoneCameraConnected,
+  onOpenCamera
 }) => {
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -32,7 +34,8 @@ const EmptyState: React.FC<EmptyStateProps> = ({
           className='border-none h-auto mb-6' 
           onImageUpload={onImageUpload} 
           uploadedImage={uploadedImage}
-          onPhoneCameraConnected={onPhoneCameraConnected} 
+          onPhoneCameraConnected={onPhoneCameraConnected}
+          onOpenCamera={onOpenCamera}
         />
         <p className='text-sm text-muted-foreground text-center'>or try an example</p>    
         <div 

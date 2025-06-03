@@ -14,7 +14,7 @@ export default defineConfig({
   })
   ],
   build: {
-    target: 'esnext', // Allows for top-level await
+    target: 'esnext', 
     commonjsOptions: {
       transformMixedEsModules: true,
     },

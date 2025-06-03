@@ -24,6 +24,9 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(120); // QR code expiry timer
+  const [countdownActive, setCountdownActive] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Refs
   const socketRef = useRef<Socket | null>(null);
@@ -114,8 +117,8 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
       trickle: true,
       config: {
         iceServers: [
-            { urls: 'stun:freestun.net:3478' },
-            // { urls: 'stun:stun2.l.google.com:19302' }
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' }
         ]
       }
     });
@@ -135,6 +138,7 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
     peer.on('stream', stream => {
       if (videoRef.current && isComponentMounted.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(console.error);
         setStatus('connected');
       }
     });
@@ -187,6 +191,44 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
     }
   };
 
+  const startCountdown = () => {
+    setCountdownActive(true);
+    setCountdown(5);
+    
+    countdownIntervalRef.current = setInterval(() => {
+      setCountdown(prevCount => {
+        if (prevCount <= 1) {
+          // Countdown finished, take the photo
+          setCountdownActive(false);
+          handleCapture();
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+          }
+          return 5; // Reset for next time
+        }
+        return prevCount - 1;
+      });
+    }, 1000);
+  };
+
+  const cancelCountdown = () => {
+    setCountdownActive(false);
+    setCountdown(5);
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+  };
+
+  // Cleanup countdown on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
+    };
+  }, []);
+
   const handleDisconnect = () => {
     cleanup();
     onDisconnect();
@@ -199,10 +241,11 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
     }
 
     // For local development
-    const protocol = 'https:';
-    const host = import.meta.env.VITE_DEV_IP;
-    const port = import.meta.env.VITE_DEV_PORT;
-    return `${protocol}//${host}:${port}/mobile-camera?sessionId=${sessionId}`;
+      const protocol = 'https:';
+      const host = import.meta.env.VITE_DEV_IP;
+      const port = import.meta.env.VITE_DEV_PORT;
+      return `${protocol}//${host}:${port}/mobile-camera?sessionId=${sessionId}`;
+
   };
   return (
     <div className="flex flex-col items-center">
@@ -262,12 +305,29 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
 
       {/* Capture Button */}
       {status === 'connected' && (
-        <Button 
-          onClick={handleCapture}
-          className="mt-4"
-        >
-          Take Photo
-        </Button>
+        <div className="mt-4 text-center">
+          {countdownActive ? (
+            <div className="flex flex-col items-center gap-2">
+              <div className="text-6xl font-bold text-blue-600 animate-pulse">
+                {countdown}
+              </div>
+              <Button 
+                onClick={cancelCountdown}
+                variant="outline"
+                className="mt-2"
+              >
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              onClick={startCountdown}
+              className="mt-4"
+            >
+              Take Photo
+            </Button>
+          )}
+        </div>
       )}
 
       {/* Add disconnect button */}

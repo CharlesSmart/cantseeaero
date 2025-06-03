@@ -4,7 +4,8 @@ import * as process from "process";
 import { io, Socket } from 'socket.io-client';
 import SimplePeer from 'simple-peer';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-
+import { Buffer } from 'buffer'
+window.Buffer = Buffer
 
 global.process = process;
 
@@ -289,6 +290,7 @@ const MobileCameraPage: React.FC = () => {
   const handleCapture = () => {
     if (peerRef.current && peerRef.current.connected) {
       try {
+        console.log("mobile capture")
         // Send capture command through data channel
         peerRef.current.send(JSON.stringify({ type: 'capture' }));
       } catch (err) {

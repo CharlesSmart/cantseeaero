@@ -14,6 +14,7 @@ import { ModeToggle } from '@/components/mode-toggle';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import CameraConnect from '@/components/CameraConnect';
 
+
 function App() {
   const [profiles, setProfiles] = useState<Profile[]>([{
     id: 1,
@@ -202,8 +203,11 @@ function App() {
   const imageUrlToUse = selectedProfile?.cachedImageUrl ?? selectedProfile?.imageUrl ?? '';
   const imageToUse = selectedProfile?.cachedImage ?? selectedProfile?.uploadedImage ?? null;
 
+  const handleCameraConnect = () => {
+    setShowCameraPreview(true);
+  };
+
   const handleCameraDisconnect = () => {
-    // Camera disconnect handled by CameraConnect component
     setShowCameraPreview(false);
   };
 
@@ -212,10 +216,30 @@ function App() {
     const res = await fetch(imageData);
     const blob = await res.blob();
     const file = new File([blob], "camera-capture.png", { type: "image/png" });
-    
-    // Use the existing image upload handler
-    handleImageUpload(file);
+   
 
+     // Create a new profile for this captured image
+    const newProfile: Profile = {
+      id: profiles.length + 1,
+      uploadedImage: file,
+      imageUrl: URL.createObjectURL(file),
+      cachedImageUrl: null,
+      cachedImage: null,
+      pixelCounts: null,
+      measurementPixels: selectedProfile?.measurementPixels ?? null,
+      measurementMm: selectedProfile?.measurementMm ?? null
+    };
+
+    // Add the new profile to the profiles array
+    const updatedProfiles = [...profiles, newProfile];
+    setProfiles(updatedProfiles);
+    
+    // Set the new profile as selected
+    setSelectedProfileId(newProfile.id);
+    
+    // Save the new profile to IndexedDB
+    await saveProfile(newProfile);
+    
   };
 
   return (
@@ -227,7 +251,8 @@ function App() {
           <EmptyState 
           onImageUpload={handleImageUpload} 
           uploadedImage={selectedProfile?.uploadedImage as File} 
-          onLoadDemoProfiles={handleLoadDemoProfiles} 
+          onLoadDemoProfiles={handleLoadDemoProfiles}
+          onOpenCamera={handleCameraConnect}
           />
         } 
         {profiles.some(profile => profile.uploadedImage !== null) &&
@@ -262,6 +287,7 @@ function App() {
             onSelectProfile={handleSelectProfile} 
             selectedProfileId={selectedProfileId}
             onDeleteProfile={handleDeleteProfile}
+            onOpenCamera={handleCameraConnect}
           />
           <MeasurementTool 
             imageUrl={imageUrlToUse} 
