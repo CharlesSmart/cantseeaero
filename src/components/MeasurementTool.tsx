@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { ChevronDown, Eraser, MousePointer2, Ruler } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { Profile } from '@/types/Profile';
+import { useProfileStore } from '@/store/profileStore'; // Import Zustand store
 
 interface Point {
   x: number;
@@ -15,18 +16,28 @@ interface Point {
 
 interface MeasurementToolProps {
   imageUrl: string;
-  onRulerUpdate: (pixels: number) => void;
+  // onRulerUpdate is modified to use store actions directly
   onRemoveBG: () => void;
   isBGRemovalLoading: boolean;
-  selectedProfileId: number | null;
-  profiles: Profile[];
+  // selectedProfileId and profiles are removed
 }
 
-const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpdate, onRemoveBG, isBGRemovalLoading, selectedProfileId, profiles }) => {
+const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG, isBGRemovalLoading }) => {
+  const store = useProfileStore();
+  const {
+    selectedProfileId,
+    profiles,
+    updateProfile,
+    setLinkedMeasurements,
+    linkedMeasurementMm, // Need this for setLinkedMeasurements
+  } = store;
+
+  const selectedProfile = profiles.find(p => p.id === selectedProfileId);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [startPoint, setStartPoint] = useState<Point | null>(null);
   const [endPoint, setEndPoint] = useState<Point | null>(null);
-  const [distance, setDistance] = useState<number | null>(null);
+  const [distance, setDistance] = useState<number | null>(null); // This local state is fine
   const [isDragging, setIsDragging] = useState<'start' | 'end' | 'line' | null>(null);
   const [cursorStyle, setCursorStyle] = useState<string>('default');
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -277,12 +288,15 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRulerUpda
 
 
   const handleDistanceChange = () => {
-    if (distance) {
-      onRulerUpdate(distance); 
+    if (distance && selectedProfile) {
+      // Update the selected profile's measurementPixels
+      updateProfile({ ...selectedProfile, measurementPixels: distance });
+      // Assume useLinkedMeasurements is true and update linked measurements in the store
+      // We need linkedMeasurementMm from the store for this call
+      setLinkedMeasurements(distance, linkedMeasurementMm);
     }
   }
 
-  // const isLoading = isBGRemovalLoading;
 
   // Define the onboarding steps in a configuration object
   const onboardingSteps = [

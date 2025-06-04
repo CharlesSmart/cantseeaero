@@ -1,204 +1,142 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react'; // useState removed
+import { useProfileStore } from './store/profileStore'; // Import Zustand store
 import { Profile } from '@/types/Profile';
 import MeasurementTool from '@/components/MeasurementTool';
 import AnalysisPanel from '@/components/AnalysisPanel';
 import { PixelCounts } from '@/utils/imageProcessing';
 import PixelCounter from '@/components/PixelCounter';
-import { saveProfile, getProfiles, deleteProfile } from '@/utils/indexedDB';
-import EmptyState from '@/components/EmptyState';
-import { removeBG } from '@/utils/removeBG';
+// saveProfile, getProfiles, deleteProfile removed from here
+// import EmptyState from '@/components/EmptyState'; // No longer directly imported
+import { useBackgroundRemoval } from '@/hooks/useBackgroundRemoval'; // Import the new hook
 import { demoProfiles } from '@/utils/demoProfiles';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ModeToggle } from '@/components/mode-toggle';
-// import CameraPreview from '@/components/CameraPreview';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import CameraConnect from '@/components/CameraConnect';
-
+import { useState } from 'react'; // Keep useState for non-profile state
+import EmptyStateDisplay from './components/layout/EmptyStateDisplay'; // Import new component
+import Workspace from './components/layout/Workspace'; // Import new component
 
 function App() {
-  const [profiles, setProfiles] = useState<Profile[]>([{
-    id: 1,
-    uploadedImage: null,
-    imageUrl: null,
-    cachedImageUrl: null,
-    cachedImage: null,
-    pixelCounts: null,
-    measurementPixels: null,
-    measurementMm: null,
-  }]);
+  // Zustand store integration
+  const profiles = useProfileStore((state) => state.profiles);
+  const selectedProfileId = useProfileStore((state) => state.selectedProfileId);
+  const linkedMeasurementPixels = useProfileStore((state) => state.linkedMeasurementPixels);
+  const linkedMeasurementMm = useProfileStore((state) => state.linkedMeasurementMm);
+  const addProfile = useProfileStore((state) => state.addProfile);
+  const setSelectedProfileId = useProfileStore((state) => state.setSelectedProfileId);
+  const updateProfile = useProfileStore((state) => state.updateProfile);
+  const deleteProfile = useProfileStore((state) => state.deleteProfile);
+  // const setLinkedMeasurements = useProfileStore((state) => state.setLinkedMeasurements); // Will be effectively replaced by new action for linked updates
+  const updateLinkedMeasurementAndAllProfiles = useProfileStore((state) => state.updateLinkedMeasurementAndAllProfiles); // New action
+  const setProfilesState = useProfileStore((state) => state.setProfiles);
+  const loadProfilesFromDB = useProfileStore((state) => state.loadProfilesFromDB); // Get new action
+  const { isBGRemovalLoading, triggerRemoveBackground } = useBackgroundRemoval(); // Use the hook
 
-  // Global calibration values
-  const [linkedMeasurementPixels, setLinkedMeasurementPixels] = useState<number | null>(null);
-  const [linkedMeasurementMm, setLinkedMeasurementMm] = useState<number | null>(null);
-  const useLinkedMeasurements = true;
+  const useLinkedMeasurements = true; // This can remain or be moved to store if needed
 
   // const [cameraSessionId, setCameraSessionId] = useState<string | null>(null);
-  const [showCameraPreview, setShowCameraPreview] = useState(false);
+  const [showCameraPreview, setShowCameraPreview] = useState(false); // Keep local UI state
 
   useEffect(() => {
-    const loadProfiles = async () => {
-      const storedProfiles = await getProfiles();
-    
-      if (storedProfiles.length > 0){
-      const profilesWithBlobUrls = storedProfiles.map(profile => {
-        const uploadedImageUrlIDB = profile.uploadedImage ? URL.createObjectURL(new Blob([profile.uploadedImage])) : null;
-        const cachedImageUrlIDB = profile.cachedImage ? URL.createObjectURL(new Blob([profile.cachedImage])) : null;
-
-        // Convert blobs to File objects
-        const uploadedImageFile = profile.uploadedImage ? new File([profile.uploadedImage], "uploadedImage.png", { type: "image/png" }) : null;
-        const cachedImageFile = profile.cachedImage ? new File([profile.cachedImage], "cachedImage.png", { type: "image/png" }) : null;
-
-        return {
-          ...profile,
-          uploadedImage: uploadedImageFile, // Store as File object
-          cachedImage: cachedImageFile, // Store as File object
-          imageUrl: uploadedImageUrlIDB,
-          cachedImageUrl: cachedImageUrlIDB,
-        };
-      });
-
-      setProfiles(profilesWithBlobUrls);
-      setSelectedProfileId(profilesWithBlobUrls[0].id); // Set the first profile's id
-
-      // Initialize global values with the first profile's values
-      setLinkedMeasurementPixels(profilesWithBlobUrls[0].measurementPixels);
-      setLinkedMeasurementMm(profilesWithBlobUrls[0].measurementMm);
-      } else {
-        // await saveProfile(profiles[0]);
-      }
-    };
-    loadProfiles();
-  }, []);
-
+    // Call the store action to load profiles from DB
+    loadProfilesFromDB();
+  }, [loadProfilesFromDB]); // Dependency array ensures this runs once on mount
 
   
   const handleLoadDemoProfiles = () => {
-    setProfiles(demoProfiles);
+    // This needs to be adapted for Zustand, potentially clearing existing profiles first
+    // or adding demo profiles to the existing ones. For now, let's replace them.
+    setProfilesState(demoProfiles);
+    if (demoProfiles.length > 0) {
+      setSelectedProfileId(demoProfiles[0].id);
+      setLinkedMeasurements(demoProfiles[0].measurementPixels, demoProfiles[0].measurementMm);
+    }
   };
 
   const handleAddProfile = async () => {
-    const newProfile: Profile = {
-      id: profiles.length + 1,
+    // ID generation is now removed from here.
+    // Get the current selected profile from the store to copy measurement values
+    const currentSelectedProfile = profiles.find(p => p.id === selectedProfileId);
+    const newProfileData: Omit<Profile, 'id'> = { // Data without ID
       uploadedImage: null,
       imageUrl: null,
       cachedImageUrl: null,
       cachedImage: null,
       pixelCounts: null,
-      measurementPixels: selectedProfile?.measurementPixels ?? null,
-      measurementMm: selectedProfile?.measurementMm ?? null
+      measurementPixels: useLinkedMeasurements ? linkedMeasurementPixels : currentSelectedProfile?.measurementPixels ?? null,
+      measurementMm: useLinkedMeasurements ? linkedMeasurementMm : currentSelectedProfile?.measurementMm ?? null,
     };
-    setProfiles([...profiles, newProfile]);
-    setSelectedProfileId(newProfile.id);
-    await saveProfile(newProfile);
-
+    addProfile(newProfileData); // Pass data without ID to store action
   };
 
-  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(profiles.length > 0 ? profiles[0].id : null);
+  // SelectedProfileId is now directly from the store
   const handleSelectProfile = (id: number) => {
-    setSelectedProfileId(id);
+    setSelectedProfileId(id); // Use store action
   };
 
   const handleUpdateProfile = async (updatedProfile: Profile) => {
-    setProfiles(profiles.map(profile => 
-      profile.id === updatedProfile.id ? updatedProfile : profile,
-    ));
-    await saveProfile(updatedProfile);
+    updateProfile(updatedProfile); // Store action now handles saving to DB
   };
 
   const handleDeleteProfile = async (id: number) => {
-    const updatedProfiles = profiles.filter(profile => profile.id !== id);
-    setProfiles(updatedProfiles);
-    await deleteProfile(id);
-
-    if (updatedProfiles.length === 0) {
-      // Initialize a new default profile if no profiles are left
-      const defaultProfile: Profile = {
-        id: 1,
-        uploadedImage: null,
-        imageUrl: null,
-        cachedImageUrl: null,
-        cachedImage: null,
-        pixelCounts: null,
-        measurementPixels: null,
-        measurementMm: null,
-      };
-      setProfiles([defaultProfile]);
-      setSelectedProfileId(defaultProfile.id);
-      await saveProfile(defaultProfile);
-    } else {
-      setSelectedProfileId(updatedProfiles[0].id);
-    }
+    // The logic for handling empty list and selecting next profile is now in store action
+    deleteProfile(id); // Store action now handles DB delete and subsequent logic
   };
 
   const selectedProfile = profiles.find(profile => profile.id === selectedProfileId);
 
   const handleImageUpload = async (file: File | null) => {
     if (selectedProfile && file) {
-        const updatedProfile = { 
+        const updatedProfileData = {
           ...selectedProfile, 
           uploadedImage: file, 
           imageUrl: URL.createObjectURL(file)
         };
-        handleUpdateProfile(updatedProfile);
+        updateProfile(updatedProfileData); // Store action handles saving
     } 
   };
 
   const handlePixelCountUpdate = (counts: PixelCounts) => {
     if (selectedProfile) {
-      const updatedProfile = { 
+      const updatedProfileData = {
         ...selectedProfile, 
         pixelCounts: counts 
       };
-      handleUpdateProfile(updatedProfile);
+        updateProfile(updatedProfileData); // Store action handles saving
     }
   };
 
   const handleRulerUpdate = (pixels: number) => {
     if (selectedProfile) {
-      const updatedProfile = { 
+      const updatedProfileData = {
         ...selectedProfile, 
         measurementPixels: pixels 
       };
-      handleUpdateProfile(updatedProfile);
+        updateProfile(updatedProfileData); // Update and save the currently selected profile
 
       if (useLinkedMeasurements) {
-        setLinkedMeasurementPixels(pixels);
-        const updatedProfiles = profiles.map(profile => ({
-          ...profile,
-          measurementPixels: pixels
-        }));
-        setProfiles(updatedProfiles);
-        updatedProfiles.forEach(profile => handleUpdateProfile(profile));
+        // Call the new store action to update linked value and all profiles
+        updateLinkedMeasurementAndAllProfiles('pixels', pixels);
       }
     }
   };
 
   const handleLengthUpdate = (length: number) => {
     if (selectedProfile) {
-      const updatedProfile = { 
+      const updatedProfileData = {
         ...selectedProfile, 
         measurementMm: length 
       };
-      handleUpdateProfile(updatedProfile);
+        updateProfile(updatedProfileData); // Update and save the currently selected profile
 
       if (useLinkedMeasurements) {
-        setLinkedMeasurementMm(length);
-
-        const updatedProfiles = profiles.map(profile => ({
-          ...profile,
-          measurementMm: length
-        }));
-        setProfiles(updatedProfiles);
-        updatedProfiles.forEach(profile => handleUpdateProfile(profile));
+        // Call the new store action to update linked value and all profiles
+        updateLinkedMeasurementAndAllProfiles('mm', length);
       }
     }
   };
   
-  const handleRemoveBG = () => {
-    removeBG(selectedProfile, handleUpdateProfile, setBGRemovalLoading);
-  };
-  const [isBGRemovalLoading, setBGRemovalLoading] = useState(false);
-
+  // const [isBGRemovalLoading, setBGRemovalLoading] = useState(false); // Removed, now comes from the hook
+  // Old handleRemoveBG function is removed as its functionality is now in useBackgroundRemoval hook.
 
   const imageUrlToUse = selectedProfile?.cachedImageUrl ?? selectedProfile?.imageUrl ?? '';
   const imageToUse = selectedProfile?.cachedImage ?? selectedProfile?.uploadedImage ?? null;
@@ -212,96 +150,45 @@ function App() {
   };
 
   const handleCameraCapture = async (imageData: string) => {
-    // Convert data URL to File object
     const res = await fetch(imageData);
     const blob = await res.blob();
     const file = new File([blob], "camera-capture.png", { type: "image/png" });
-   
 
-     // Create a new profile for this captured image
-    const newProfile: Profile = {
-      id: profiles.length + 1,
+    // ID generation is now removed from here.
+    // Get the current selected profile from the store to copy measurement values
+    const currentSelectedProfile = profiles.find(p => p.id === selectedProfileId);
+    const newProfileData: Omit<Profile, 'id'> = { // Data without ID
       uploadedImage: file,
       imageUrl: URL.createObjectURL(file),
       cachedImageUrl: null,
       cachedImage: null,
       pixelCounts: null,
-      measurementPixels: selectedProfile?.measurementPixels ?? null,
-      measurementMm: selectedProfile?.measurementMm ?? null
+      measurementPixels: useLinkedMeasurements ? linkedMeasurementPixels : currentSelectedProfile?.measurementPixels ?? null,
+      measurementMm: useLinkedMeasurements ? linkedMeasurementMm : currentSelectedProfile?.measurementMm ?? null,
     };
 
-    // Add the new profile to the profiles array
-    const updatedProfiles = [...profiles, newProfile];
-    setProfiles(updatedProfiles);
-    
-    // Set the new profile as selected
-    setSelectedProfileId(newProfile.id);
-    
-    // Save the new profile to IndexedDB
-    await saveProfile(newProfile);
-    
+    addProfile(newProfileData); // Pass data without ID to store action
   };
 
   return (
     <ThemeProvider defaultTheme='light' storageKey='vite-ui-theme'>
       <ModeToggle />
-    <div className="min-w-[100vw] min-h-screen bg-background-pattern bg-no-repeat bg-cover">
-        <>
-        {profiles.every(profile => profile.uploadedImage === null) &&
-          <EmptyState 
-          onImageUpload={handleImageUpload} 
-          uploadedImage={selectedProfile?.uploadedImage as File} 
-          onLoadDemoProfiles={handleLoadDemoProfiles}
-          onOpenCamera={handleCameraConnect}
-          />
-        } 
-        {profiles.some(profile => profile.uploadedImage !== null) &&
-          <>
-          {showCameraPreview && (
-            <Card className="max-w-md mx-auto mb-4 mt-4">
-              <CardHeader>
-                <h2 className="text-lg font-semibold">Phone Camera Preview</h2>
-              </CardHeader>
-              <CardContent>
-                <CameraConnect 
-                  onCapture={handleCameraCapture}
-                  onDisconnect={handleCameraDisconnect}
-                />
-              </CardContent>
-            </Card>
-          )}
-          <PixelCounter 
-            imageFile={imageToUse as File}
-            onPixelCountUpdate={handlePixelCountUpdate}
-          />
-          <AnalysisPanel 
-            pixelCounts={selectedProfile?.pixelCounts ?? null}
-            measurementPixels={useLinkedMeasurements ? linkedMeasurementPixels ?? null : selectedProfile?.measurementPixels ?? null}
-            measurementMm={useLinkedMeasurements ? linkedMeasurementMm ?? null : selectedProfile?.measurementMm ?? null}
-            onLengthUpdate={handleLengthUpdate}
-            uploadedImage={selectedProfile?.uploadedImage as File}
-            imageUrl={selectedProfile?.imageUrl ?? ''}
-            handleImageUpload={handleImageUpload}
-            profiles={profiles} 
-            onAddProfile={handleAddProfile} 
-            onSelectProfile={handleSelectProfile} 
-            selectedProfileId={selectedProfileId}
-            onDeleteProfile={handleDeleteProfile}
+      <div className="min-w-[100vw] min-h-screen bg-background-pattern bg-no-repeat bg-cover">
+        {profiles.every(profile => profile.uploadedImage === null) ? (
+          <EmptyStateDisplay onOpenCamera={handleCameraConnect} />
+        ) : (
+          <Workspace
+            showCameraPreview={showCameraPreview}
+            onCameraCapture={handleCameraCapture}
+            onCameraDisconnect={handleCameraDisconnect}
             onOpenCamera={handleCameraConnect}
-          />
-          <MeasurementTool 
-            imageUrl={imageUrlToUse} 
-            onRulerUpdate={handleRulerUpdate}
-            onRemoveBG={handleRemoveBG} // Use the new handler
+            imageUrlToUse={imageUrlToUse}
             isBGRemovalLoading={isBGRemovalLoading}
-            selectedProfileId={selectedProfileId}
-            profiles={profiles}
+            onRemoveBG={triggerRemoveBackground}
+            selectedProfilePixelCounts={selectedProfile?.pixelCounts ?? null}
           />
-          </>
-        }
-        </>
-        
-    </div>
+        )}
+      </div>
     </ThemeProvider>
   );
 }
