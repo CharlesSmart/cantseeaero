@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Profile } from '../types/profile';
+import { Profile } from '../types/Profile';
 import {
   saveProfile as saveProfileToDB,
   getProfiles as getProfilesFromDB,
@@ -30,11 +30,11 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   loadProfilesFromDB: async () => {
     const storedProfiles = await getProfilesFromDB();
     if (storedProfiles.length > 0) {
-      const profilesWithFileObjects = storedProfiles.map(profileFromDB => {
+      const profilesWithFileObjects = storedProfiles.map((profileFromDB, index) => {
         // Convert ArrayBuffer back to File objects
         const uploadedImageFile = profileFromDB.uploadedImage instanceof ArrayBuffer
           ? new File([profileFromDB.uploadedImage], "uploadedImage.png", { type: "image/png" })
-          : profileFromDB.uploadedImage; // Or null if it wasn't an ArrayBuffer
+          : profileFromDB.uploadedImage;
         const cachedImageFile = profileFromDB.cachedImage instanceof ArrayBuffer
           ? new File([profileFromDB.cachedImage], "cachedImage.png", { type: "image/png" })
           : profileFromDB.cachedImage;
@@ -43,37 +43,49 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
           ...profileFromDB,
           uploadedImage: uploadedImageFile,
           cachedImage: cachedImageFile,
-          // Recreate blob URLs if needed for immediate display, or handle in component
           imageUrl: uploadedImageFile ? URL.createObjectURL(uploadedImageFile) : null,
           cachedImageUrl: cachedImageFile ? URL.createObjectURL(cachedImageFile) : null,
+          // Fix displayId assignment - use index + 1 for profiles without displayId
+          displayId: profileFromDB.displayId || (index + 1),
         };
       });
+
+      // Use the first profile's measurements as the baseline for linked measurements
+      const firstProfile = profilesWithFileObjects[0];
+      
       set({
         profiles: profilesWithFileObjects,
-        selectedProfileId: profilesWithFileObjects[0].id,
-        linkedMeasurementPixels: profilesWithFileObjects[0].measurementPixels,
-        linkedMeasurementMm: profilesWithFileObjects[0].measurementMm,
+        selectedProfileId: firstProfile.id,
+        linkedMeasurementPixels: firstProfile.measurementPixels,
+        linkedMeasurementMm: firstProfile.measurementMm,
       });
     } else {
       // Initialize with a default profile if DB is empty
-      const defaultProfile: Profile = {
-        id: Date.now(), // Use Date.now() for ID
-        uploadedImage: null, imageUrl: null, cachedImageUrl: null, cachedImage: null,
-        pixelCounts: null, measurementPixels: null, measurementMm: null,
-      };
-      set({ profiles: [defaultProfile], selectedProfileId: defaultProfile.id });
-      await saveProfileToDB(defaultProfile); // Save the initial default profile
+      // const defaultProfile: Profile = {
+      //   id: Date.now(),
+      //   displayId: 1, // First profile starts at 1
+      //   uploadedImage: null, imageUrl: null, cachedImageUrl: null, cachedImage: null,
+      //   pixelCounts: null, measurementPixels: null, measurementMm: null,
+      // };
+      // set({ profiles: [defaultProfile], selectedProfileId: defaultProfile.id });
+      // await saveProfileToDB(defaultProfile); // Save the initial default profile
     }
   },
 
   addProfile: async (profileData) => {
+    // Generate human-readable display ID
+    const existingDisplayIds = get().profiles.map(p => p.displayId || 0);
+    const nextDisplayId = existingDisplayIds.length > 0 ? Math.max(...existingDisplayIds) + 1 : 1;
+    
     const newProfile: Profile = {
       ...profileData,
-      id: Date.now(), // ID generated here
+      id: Date.now(), // Technical ID - always unique
+      displayId: nextDisplayId, // Human readable ID for UI
     };
+    
     set((state) => ({
       profiles: [...state.profiles, newProfile],
-      selectedProfileId: newProfile.id, // Select the new profile
+      selectedProfileId: newProfile.id,
     }));
     await saveProfileToDB(newProfile);
   },
@@ -88,21 +100,33 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   },
 
   deleteProfile: async (id) => {
-    set((state) => ({
-      profiles: state.profiles.filter((p) => p.id !== id),
-      // Optionally, select another profile if the deleted one was selected
-      selectedProfileId: state.selectedProfileId === id ? (state.profiles[0]?.id || null) : state.selectedProfileId,
-    }));
-    await deleteProfileFromDB(id);
-    if (get().profiles.length === 0) {
-        // If all profiles are deleted, add a default one back
-        // Prepare data without ID for addProfile action
-        const defaultProfileData: Omit<Profile, 'id'> = {
-            uploadedImage: null, imageUrl: null, cachedImageUrl: null, cachedImage: null,
-            pixelCounts: null, measurementPixels: null, measurementMm: null,
-        };
-        get().addProfile(defaultProfileData); // addProfile will generate the ID
+    console.log('🗑️ DELETE PROFILE CALLED with ID:', id);
+    console.log('📋 Current profiles before delete:', get().profiles.map(p => ({ id: p.id, displayId: p.displayId })));
+    
+    set((state) => {
+      const newProfiles = state.profiles.filter((p) => p.id !== id);
+      const newSelectedId = state.selectedProfileId === id 
+        ? (newProfiles[0]?.id || null) 
+        : state.selectedProfileId;
+
+      console.log('📋 Profiles after filter:', newProfiles.map(p => ({ id: p.id, displayId: p.displayId })));
+      console.log('🎯 New selected ID:', newSelectedId);
+
+      return {
+        profiles: newProfiles,
+        selectedProfileId: newSelectedId,
+      };
+    });
+
+    try {
+      console.log('💾 Attempting to delete from IndexedDB, ID:', id);
+      await deleteProfileFromDB(id);
+      console.log('✅ Successfully deleted from IndexedDB');
+    } catch (error) {
+      console.error('❌ Failed to delete from IndexedDB:', error);
     }
+
+    console.log('📊 Final profiles count:', get().profiles.length);
   },
 
   setLinkedMeasurements: (pixels, mm) =>

@@ -28,8 +28,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
     selectedProfileId,
     profiles,
     updateProfile,
-    setLinkedMeasurements,
-    linkedMeasurementMm, // Need this for setLinkedMeasurements
+    updateLinkedMeasurementAndAllProfiles,
   } = store;
 
   const selectedProfile = profiles.find(p => p.id === selectedProfileId);
@@ -289,11 +288,11 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
 
   const handleDistanceChange = () => {
     if (distance && selectedProfile) {
-      // Update the selected profile's measurementPixels
+      // Update the selected profile's measurementPixels first
       updateProfile({ ...selectedProfile, measurementPixels: distance });
-      // Assume useLinkedMeasurements is true and update linked measurements in the store
-      // We need linkedMeasurementMm from the store for this call
-      setLinkedMeasurements(distance, linkedMeasurementMm);
+      
+      // Then update all profiles with the linked measurement and save to DB
+      updateLinkedMeasurementAndAllProfiles('pixels', distance);
     }
   }
 

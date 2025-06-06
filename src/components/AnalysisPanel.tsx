@@ -28,7 +28,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
     onPhoneCameraConnected,
     onOpenCamera
 }) => {
-    const store = useProfileStore();
+    // const store = useProfileStore(); // No longer need to get the whole store object
     // Destructure necessary state and actions from the store
     const {
         profiles,
@@ -38,9 +38,9 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
         addProfile,
         setSelectedProfileId,
         deleteProfile,
-        setLinkedMeasurements,
-        updateProfile // Assuming updateProfile updates a single profile
-    } = store;
+        updateProfile, // Assuming updateProfile updates a single profile
+        updateLinkedMeasurementAndAllProfiles,
+    } = useProfileStore();
 
     const selectedProfile = profiles.find(p => p.id === selectedProfileId);
 
@@ -49,14 +49,28 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
     const togglePanelVisibility = () => {
         setIsPanelVisible(!isPanelVisible);
     };
+     const handleDeleteProfile = async (id: number) => {
+    // The logic for handling empty list and selecting next profile is now in store action
+    deleteProfile(id); // Store action now handles DB delete and subsequent logic
+    };
+    const handleAddProfile = () => {
+        const newProfileData: Omit<Profile, 'id'> = {
+            displayId: 1,
+            uploadedImage: null,
+            imageUrl: null,
+            cachedImageUrl: null,
+            cachedImage: null,
+            pixelCounts: null,
+            measurementPixels: linkedMeasurementPixels,
+            measurementMm: linkedMeasurementMm,
+        };
+        addProfile(newProfileData);
+    };
 
     const handleActualLengthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const length = parseFloat(event.target.value);
-        // Update linked measurement in the store
-        setLinkedMeasurements(linkedMeasurementPixels, length);
-        // Also update the current profile's measurementMm if a profile is selected
-        if (selectedProfile) {
-            updateProfile({ ...selectedProfile, measurementMm: length });
+        if (!isNaN(length)) {
+            updateLinkedMeasurementAndAllProfiles('mm', length);
         }
     };
 
@@ -108,7 +122,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                     <h1 className='text-md font-semibold'>Positions</h1>
                     <Button 
                         variant="ghost" 
-                        onClick={addProfile} // Use direct store action
+                        onClick={handleAddProfile} // Use direct store action
                         className='justify-self-end gap-2 px-2'
                         aria-label="Add new position"
                     >
@@ -123,7 +137,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                 profiles={profiles} // Pass from store
                 onSelectProfile={setSelectedProfileId} // Pass from store
                 selectedProfileId={selectedProfileId} // Pass from store
-                onDeleteProfile={deleteProfile} // Pass from store
+                onDeleteProfile={handleDeleteProfile} // Pass from store
                 onImageUpload={handleImageUploadDirect} // Use direct handler
             />
             <ImageUploader 

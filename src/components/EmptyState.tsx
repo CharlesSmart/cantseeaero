@@ -56,6 +56,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
       // If no profile exists, create one
       const newProfile: Profile = {
         id: Date.now(), // Simple ID generation
+        displayId: 1,
         uploadedImage: file,
         imageUrl: URL.createObjectURL(file),
         cachedImageUrl: null,
