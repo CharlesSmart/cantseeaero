@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Input } from "@/components/ui/input";
-import { AlertCircle, Upload, Camera } from "lucide-react";
+import { AlertCircle, Upload, Smartphone } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from '@/components/ui/button';
 import classNames from 'classnames'; // Import classnames utility
@@ -12,6 +12,7 @@ interface ImageUploaderProps {
   className?: string;
   onPhoneCameraConnected?: (sessionId: string) => void;
   onOpenCamera?: () => void;
+  hasProfiles?: boolean; // Add this prop
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({ 
@@ -19,6 +20,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   uploadedImage, 
   className,
   onOpenCamera,
+  hasProfiles = false, // Default to false
 }) => {
   const [error, setError] = useState<string | null>(null);
   const errorId = "image-upload-error";
@@ -58,23 +60,26 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           role="region"
           aria-labelledby={inputId}
         >
-          <div className="flex space-x-2">
+          <div className="flex flex-col gap-2">
             <Button 
               onClick={handleClick}
               aria-controls={inputId}
               aria-haspopup="dialog"
             >
-              <Upload className='w-4 h-4 mr-2' aria-hidden="true" />
-              Upload Image
+              <Upload className='w-4 h-4' aria-hidden="true" />
+              Upload image
             </Button>
-            <Button 
-              onClick={handleCameraClick}
-              variant="outline"
-              aria-label="Connect phone camera"
-            >
-              <Camera className='w-4 h-4 mr-2' aria-hidden="true" />
-              Camera
-            </Button>
+            {hasProfiles && (
+              <Button 
+                onClick={handleCameraClick}
+                variant="ghost"
+                aria-label="Connect phone camera"
+                className='my-0'
+              >
+                <Smartphone className='w-4 h-4' aria-hidden="true" />
+                Connect phone camera
+              </Button>
+            )}
           </div>
         </div>
       }

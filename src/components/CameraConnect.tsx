@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import io, { Socket } from 'socket.io-client';
 import SimplePeer from 'simple-peer';
 import { QRCodeSVG } from 'qrcode.react';
-import { Progress } from "@/components/ui/progress"
 import { Button } from '@/components/ui/button';
 
 interface CameraConnectProps {
@@ -249,27 +248,26 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
   };
   return (
     <div className="flex flex-col items-center">
+      {status === 'initializing' && (
+        <div className="text-center">
+          <p className='text-sm text-muted-foreground mb-2'>Initializing connection...</p>
+        </div>
+      )}
       {/* QR Code Section */}
       {status === 'ready' && sessionId && (
+        <>
         <div className="text-center">
-          <QRCodeSVG 
-            value={getQRUrl()}
-            size={200}
-          />
-          <a
-                  href={getQRUrl()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 block text-sm text-blue-600 hover:text-blue-800 transition-colors underline text-center"
-                  aria-label="Open direct connection link in new tab"
-                >
+          <QRCodeSVG value={getQRUrl()} size={200} />
+          </div>
+          <div>
+          <div className="mt-2">
+            <p className='text-sm text-muted-foreground'>QR code expires in {timeLeft} seconds</p>
+            <a href={getQRUrl()} target="_blank" rel="noopener noreferrer" className="mt-2 block text-sm text-primary hover:text-blue-800 transition-colors underline text-center" aria-label="Open direct connection link in new tab">
                   Or open direct link
                 </a>
-          <div className="mt-2">
-            <Progress value={(timeLeft / 120) * 100} />
-            <p>QR code expires in {timeLeft} seconds</p>
           </div>
         </div>
+         </>
       )}
 
       {/* Camera Preview Section */}
@@ -294,12 +292,11 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
       {(status === 'error' || status === 'timeout') && (
         <div className="text-center text-red-600">
           <p>{status === 'timeout' ? 'QR code expired' : errorMessage}</p>
-          <button
+          <Button
             onClick={handleRetry}
-            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
           >
             Try Again
-          </button>
+          </Button>
         </div>
       )}
 
@@ -331,15 +328,15 @@ const CameraConnect: React.FC<CameraConnectProps> = ({ onCapture, onDisconnect }
       )}
 
       {/* Add disconnect button */}
-      {status === 'connected' && (
+      <hr className='w-full my-4'></hr>
         <Button 
           onClick={handleDisconnect}
           variant="outline"
-          className="mt-2"
+          
         >
-          Disconnect
+          Cancel
         </Button>
-      )}
+      
     </div>
   );
 };

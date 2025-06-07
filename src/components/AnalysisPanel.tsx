@@ -145,6 +145,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                 uploadedImage={selectedProfile?.uploadedImage ?? null} // Get from selectedProfile in store
                 onPhoneCameraConnected={onPhoneCameraConnected}
                 onOpenCamera={onOpenCamera}
+                hasProfiles={profiles.length > 0}
             /> 
 
             </div>
