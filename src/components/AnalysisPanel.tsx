@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useProfileStore } from '@/store/profileStore'; // Import Zustand store
 import AreaCalculator from './AreaCalculator';
 import { PixelCounts } from '@/utils/imageProcessing';
 import {Card, CardContent, CardHeader} from "@/components/ui/card"
@@ -13,49 +14,80 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 
 interface AnalysisPanelProps {
-    pixelCounts: PixelCounts | null;
-    measurementPixels: number | null;
-    measurementMm: number | null;
-    onLengthUpdate: (mm: number) => void;
-    uploadedImage: (File);
-    imageUrl: string;
-    handleImageUpload: (file: File | null) => void; 
-    profiles: Profile[];
-    onAddProfile: () => void; 
-    onSelectProfile: (id: number) => void; 
-    selectedProfileId: number | null;
-    onDeleteProfile: (id: number) => void;
+    // Props related to profile state are removed
+    pixelCounts: PixelCounts | null; // This might come from selectedProfile in store later
     onPhoneCameraConnected?: (sessionId: string) => void;
     onOpenCamera?: () => void;
+    // measurementPixels, measurementMm, onLengthUpdate, uploadedImage, imageUrl, handleImageUpload,
+    // profiles, onAddProfile, onSelectProfile, selectedProfileId, onDeleteProfile
+    // are removed as they will be accessed from the Zustand store.
 }
 
 const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
-    pixelCounts,
-    measurementPixels,
-    measurementMm,
-    onLengthUpdate,
-    uploadedImage,
-    handleImageUpload,
-    profiles,
-    onAddProfile,
-    onSelectProfile,
-    selectedProfileId,
-    onDeleteProfile,
+    pixelCounts, // Keep for now, might be derived from store's selectedProfile
     onPhoneCameraConnected,
     onOpenCamera
 }) => {
+    // const store = useProfileStore(); // No longer need to get the whole store object
+    // Destructure necessary state and actions from the store
+    const {
+        profiles,
+        selectedProfileId,
+        linkedMeasurementPixels,
+        linkedMeasurementMm,
+        addProfile,
+        setSelectedProfileId,
+        deleteProfile,
+        updateProfile, // Assuming updateProfile updates a single profile
+        updateLinkedMeasurementAndAllProfiles,
+    } = useProfileStore();
+
+    const selectedProfile = profiles.find(p => p.id === selectedProfileId);
 
     const [isPanelVisible, setIsPanelVisible] = useState<boolean>(true);
 
     const togglePanelVisibility = () => {
         setIsPanelVisible(!isPanelVisible);
     };
+     const handleDeleteProfile = async (id: number) => {
+    // The logic for handling empty list and selecting next profile is now in store action
+    deleteProfile(id); // Store action now handles DB delete and subsequent logic
+    };
+    const handleAddProfile = () => {
+        const newProfileData: Omit<Profile, 'id'> = {
+            displayId: 1,
+            uploadedImage: null,
+            imageUrl: null,
+            cachedImageUrl: null,
+            cachedImage: null,
+            pixelCounts: null,
+            measurementPixels: linkedMeasurementPixels,
+            measurementMm: linkedMeasurementMm,
+        };
+        addProfile(newProfileData);
+    };
 
     const handleActualLengthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const length = parseFloat(event.target.value);
-            onLengthUpdate(length)
+        if (!isNaN(length)) {
+            updateLinkedMeasurementAndAllProfiles('mm', length);
+        }
     };
 
+    // Handle image upload for the selected profile
+    const handleImageUploadDirect = (file: File | null) => {
+        if (selectedProfile && file) {
+            const updatedProfile = {
+                ...selectedProfile,
+                uploadedImage: file,
+                imageUrl: URL.createObjectURL(file),
+                // Reset cached image when new one is uploaded
+                cachedImage: null,
+                cachedImageUrl: null,
+            };
+            updateProfile(updatedProfile);
+        }
+    };
 
     return (
     <div role="complementary" aria-label="Analysis Panel">
@@ -73,7 +105,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
         </Card>
         )}
         {isPanelVisible && (
-        <Card className='max-w-xs max-h-[calc(100vh-2rem)] overflow-y-auto fixed left-4 top-4'>
+        <Card className='max-w-xs max-h-[calc(100vh-2rem)] overflow-y-auto fixed left-4 top-4 no-scrollbar'>
             <CardHeader className='pb-0'>
                 <div><img src={Logo} alt="Windtunnel Logo" /></div>
                 <Button 
@@ -90,7 +122,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                     <h1 className='text-md font-semibold'>Positions</h1>
                     <Button 
                         variant="ghost" 
-                        onClick={onAddProfile} 
+                        onClick={handleAddProfile} // Use direct store action
                         className='justify-self-end gap-2 px-2'
                         aria-label="Add new position"
                     >
@@ -102,15 +134,15 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
         <CardContent className='flex flex-col gap-4'>
             <div>
             <ProfileManager 
-                profiles={profiles}
-                onSelectProfile={onSelectProfile}
-                selectedProfileId={selectedProfileId}
-                onDeleteProfile={onDeleteProfile}
-                onImageUpload={handleImageUpload}
+                profiles={profiles} // Pass from store
+                onSelectProfile={setSelectedProfileId} // Pass from store
+                selectedProfileId={selectedProfileId} // Pass from store
+                onDeleteProfile={handleDeleteProfile} // Pass from store
+                onImageUpload={handleImageUploadDirect} // Use direct handler
             />
             <ImageUploader 
-                onImageUpload={handleImageUpload} 
-                uploadedImage={uploadedImage}
+                onImageUpload={handleImageUploadDirect} // Use direct handler
+                uploadedImage={selectedProfile?.uploadedImage ?? null} // Get from selectedProfile in store
                 onPhoneCameraConnected={onPhoneCameraConnected}
                 onOpenCamera={onOpenCamera}
             /> 
@@ -131,13 +163,14 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                     </Tooltip>  
                     </TooltipProvider>
                 </div>
-                <DataRowWithInput label={'Measured length'} value={measurementPixels ?? ''} onChange={() => {}} disabled={true} unit={'px'}></DataRowWithInput>
-                <DataRowWithInput label={'Known length'} value={measurementMm ?? ''} onChange={handleActualLengthChange} disabled={false} unit={'mm'}></DataRowWithInput>
+                {/* Use linkedMeasurementPixels and linkedMeasurementMm from store */}
+                <DataRowWithInput label={'Measured length'} value={linkedMeasurementPixels ?? ''} onChange={() => {}} disabled={true} unit={'px'}></DataRowWithInput>
+                <DataRowWithInput label={'Known length'} value={linkedMeasurementMm ?? ''} onChange={handleActualLengthChange} disabled={false} unit={'mm'}></DataRowWithInput>
         <hr className='-mx-4 my-2' aria-hidden="true"></hr> 
             <AreaCalculator 
-                pixelCounts={pixelCounts}
-                measurementPixels={measurementPixels}
-                measurementMm={measurementMm}
+                pixelCounts={pixelCounts} // This might need to come from selectedProfile.pixelCounts
+                measurementPixels={linkedMeasurementPixels} // Use from store
+                measurementMm={linkedMeasurementMm} // Use from store
             /></section>
             </CardContent>
         </Card>

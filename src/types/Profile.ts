@@ -2,6 +2,7 @@ import { PixelCounts } from "@/utils/imageProcessing";
 
 export interface Profile {
     id: number;
+    displayId: number;
     uploadedImage: File | null;
     imageUrl: string | null;
     pixelCounts: PixelCounts | null;

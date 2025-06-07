@@ -8,7 +8,8 @@ async function createFileFromUrl(url: string, fileName: string, mimeType: string
 
 export const demoProfiles: Profile[] = [
   {
-    id: 1,
+    id: Date.now(),
+    displayId: 1,
     uploadedImage: await createFileFromUrl("/demo/demoImage1.png", "Demo Image 1", "image/png"),
     imageUrl: "/demo/demoImage1.png",
     pixelCounts: null,
@@ -18,7 +19,8 @@ export const demoProfiles: Profile[] = [
     cachedImage: null,
   },
   {
-    id: 2,
+    id: Date.now(),
+    displayId: 2,
     uploadedImage: await createFileFromUrl("/demo/demoImage2.png", "Demo Image 2", "image/png"),
     imageUrl: "/demo/demoImage2.png",
     pixelCounts: null,
@@ -28,7 +30,8 @@ export const demoProfiles: Profile[] = [
     cachedImage: null,
   },
   {
-    id: 3,
+    id: Date.now(),
+    displayId: 3,
     uploadedImage: await createFileFromUrl("/demo/demoImage3.png", "Demo Image 3", "image/png"),
     imageUrl: "/demo/demoImage3.png",
     pixelCounts: null,
