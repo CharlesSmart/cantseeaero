@@ -72,11 +72,6 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({ profiles, onSelectProfi
                     tabIndex={0}
                     onClick={(e) => {
                       e.stopPropagation();
-                      console.log('🖱️ Delete clicked for profile:', { 
-                        technicalId: profile.id, 
-                        displayId: profile.displayId,
-                        profileData: profile 
-                      });
                       onDeleteProfile(profile.id);
                     }}
                     onKeyDown={(e) => handleDeleteKeyDown(e, profile.id)}
