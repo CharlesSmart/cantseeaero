@@ -26,3 +26,6 @@ cert.pem
 *.sln
 *.sw?
 .history
+
+tsconfig.app.tsbuildinfo
+tsconfig.node.tsbuildinfo

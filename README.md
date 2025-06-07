@@ -1,50 +1,16 @@
-# React + TypeScript + Vite
+###Frontal Area Drag Analysis App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-Currently, two official plugins are available:
+##Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+This application is designed to analyze frontal area drag by removing backgrounds from images and providing a calibration measure. It leverages modern web technologies to deliver a seamless user experience.
+Technologies Used: React, TypeScript, Shad, Tailwind CSS, WebRTC: For connecting to the phone camera, enabling real-time image capture.
 
-## Expanding the ESLint configuration
+##Features
+Background removal from images to focus on the subject.
+Calibration measures to ensure accurate drag analysis.
+User-friendly interface built with React and Tailwind CSS.
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
-
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
-
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+##Local Development
+For local development considerations, please refer to the docs folder in the project repository.
+Feel free to modify any sections or add more details as needed! If you need further assistance, let me know!
