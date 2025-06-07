@@ -105,7 +105,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
         </Card>
         )}
         {isPanelVisible && (
-        <Card className='max-w-xs max-h-[calc(100vh-2rem)] overflow-y-auto fixed left-4 top-4'>
+        <Card className='max-w-xs max-h-[calc(100vh-2rem)] overflow-y-auto fixed left-4 top-4 no-scrollbar'>
             <CardHeader className='pb-0'>
                 <div><img src={Logo} alt="Windtunnel Logo" /></div>
                 <Button 

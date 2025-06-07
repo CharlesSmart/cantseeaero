@@ -19,6 +19,7 @@ interface ProfileState {
   setLinkedMeasurements: (pixels: number | null, mm: number | null) => void;
   updateLinkedMeasurementAndAllProfiles: (type: 'pixels' | 'mm', value: number) => Promise<void>;
   setProfiles: (profiles: Profile[]) => void;
+  saveTimeout: NodeJS.Timeout | null;
 }
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
@@ -26,6 +27,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   selectedProfileId: null,
   linkedMeasurementPixels: null,
   linkedMeasurementMm: null,
+  saveTimeout: null,
 
   loadProfilesFromDB: async () => {
     const storedProfiles = await getProfilesFromDB();
@@ -59,17 +61,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         linkedMeasurementPixels: firstProfile.measurementPixels,
         linkedMeasurementMm: firstProfile.measurementMm,
       });
-    } else {
-      // Initialize with a default profile if DB is empty
-      // const defaultProfile: Profile = {
-      //   id: Date.now(),
-      //   displayId: 1, // First profile starts at 1
-      //   uploadedImage: null, imageUrl: null, cachedImageUrl: null, cachedImage: null,
-      //   pixelCounts: null, measurementPixels: null, measurementMm: null,
-      // };
-      // set({ profiles: [defaultProfile], selectedProfileId: defaultProfile.id });
-      // await saveProfileToDB(defaultProfile); // Save the initial default profile
-    }
+    } 
   },
 
   addProfile: async (profileData) => {
@@ -96,21 +88,16 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set((state) => ({
       profiles: state.profiles.map((p) => (p.id === profile.id ? profile : p)),
     }));
+    console.log("Updated profile", profile);
     await saveProfileToDB(profile);
   },
 
   deleteProfile: async (id) => {
-    console.log('🗑️ DELETE PROFILE CALLED with ID:', id);
-    console.log('📋 Current profiles before delete:', get().profiles.map(p => ({ id: p.id, displayId: p.displayId })));
-    
     set((state) => {
       const newProfiles = state.profiles.filter((p) => p.id !== id);
       const newSelectedId = state.selectedProfileId === id 
         ? (newProfiles[0]?.id || null) 
         : state.selectedProfileId;
-
-      console.log('📋 Profiles after filter:', newProfiles.map(p => ({ id: p.id, displayId: p.displayId })));
-      console.log('🎯 New selected ID:', newSelectedId);
 
       return {
         profiles: newProfiles,
@@ -119,14 +106,10 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     });
 
     try {
-      console.log('💾 Attempting to delete from IndexedDB, ID:', id);
       await deleteProfileFromDB(id);
-      console.log('✅ Successfully deleted from IndexedDB');
     } catch (error) {
       console.error('❌ Failed to delete from IndexedDB:', error);
     }
-
-    console.log('📊 Final profiles count:', get().profiles.length);
   },
 
   setLinkedMeasurements: (pixels, mm) =>
@@ -139,18 +122,27 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       ...(type === 'pixels' ? { measurementPixels: value } : { measurementMm: value }),
     }));
 
+    // Update UI immediately
     if (type === 'pixels') {
       set({ profiles: updatedProfiles, linkedMeasurementPixels: value });
     } else {
       set({ profiles: updatedProfiles, linkedMeasurementMm: value });
     }
 
-    // Persist all updated profiles to IndexedDB
-    // This still calls saveProfileToDB for each, but it's now centralized
-    // and follows a single state update.
-    for (const profile of updatedProfiles) {
-      await saveProfileToDB(profile);
+    // Debounce the DB writes
+    const currentTimeout = get().saveTimeout;
+    if (currentTimeout) {
+      clearTimeout(currentTimeout);
     }
+    
+    const timeoutId = setTimeout(async () => {
+      for (const profile of updatedProfiles) {
+        await saveProfileToDB(profile);
+      }
+      set({ saveTimeout: null });
+    }, 500); // 500ms debounce
+    
+    set({ saveTimeout: timeoutId });
   },
 
   setProfiles: (profiles) => set({ profiles }), // Kept for potential direct use, e.g. demo profiles

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -45,6 +45,9 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
   const [imagePosition, setImagePosition] = useState<Point>({ x: 0, y: 0 });
   const [isImageDragging, setIsImageDragging] = useState<boolean>(false);
 
+  // Performance optimization refs
+  const animationFrameRef = useRef<number | null>(null);
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleZoomChange = (newZoomLevel: number) => {
     setZoomLevel(newZoomLevel);
@@ -52,7 +55,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
 
   const calculateDistance = useCallback((start: Point, end: Point) => {
     return Math.round(Math.sqrt(Math.pow((end.x - start.x), 2) + Math.pow((end.y - start.y), 2)));
-  }, [zoomLevel]);
+  }, []); // Removed zoomLevel dependency as it's not needed for calculation
 
   // Update cursor style based on selected tool
   useEffect(() => {
@@ -68,21 +71,17 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
-    // Set the canvas to a larger size initially
+    // Set canvas to window size, not scaled image size
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-
     const img = new Image();
     img.onload = () => {
-      // Draw the image onto the canvas after it loads
-      canvas.width = Math.max(img.width * zoomLevel, window.innerWidth);
-      canvas.height = Math.max(img.height * zoomLevel, window.innerHeight);
-      ctx.drawImage(img, 0, 0, img.width * zoomLevel, img.height * zoomLevel);
+      // Don't scale the image here - let drawMeasurementTool handle it
       imageRef.current = img;
+      drawMeasurementTool(); // Initial draw
     };
     img.src = imageUrl;
-    
   }, [imageUrl, zoomLevel]);
 
   const isNearLine = useCallback((x: number, y: number): boolean => {
@@ -96,13 +95,15 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
     return Math.abs(d1 + d2 - lineLength) < 5;
   }, [startPoint, endPoint, calculateDistance]);
 
-  const handleCanvasMouseDown = (event: React.MouseEvent<HTMLCanvasElement> ) => {
+  const handleCanvasMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
+    // Convert to unscaled coordinates
     const x = (event.clientX - rect.left) / zoomLevel;
     const y = (event.clientY - rect.top) / zoomLevel;
+    
     if (selectedTool === 'move') {
       setIsImageDragging(true);
     } else if (selectedTool === 'ruler') {
@@ -117,20 +118,20 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
           setIsDragging('line');
         } else {
           setStartPoint({ x, y });
-          setEndPoint({ x, y }); // Initialize endPoint to the same as startPoint
-          setIsDragging('end'); // Set dragging to 'end' to allow dragging to draw
+          setEndPoint({ x, y });
+          setIsDragging('end');
           setDistance(null);
         }
       } else if (!startPoint) {
         setStartPoint({ x, y });
-        setEndPoint({ x, y }); // Initialize endPoint to the same as startPoint
-        setIsDragging('end'); // Set dragging to 'end' to allow dragging to draw
+        setEndPoint({ x, y });
+        setIsDragging('end');
       } else {
         setEndPoint({ x, y });
         setDistance(calculateDistance({ x, y }, startPoint));
       }
     }
-  };
+  }, [selectedTool, startPoint, endPoint, isNearLine, zoomLevel, calculateDistance]);
 
   const drawMeasurementTool = useCallback(() => {
     const canvas = canvasRef.current;
@@ -149,9 +150,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
     if (startPoint && endPoint) {
       const baseSize = 20; // Base size of the point
       const scaledSize = baseSize / zoomLevel;
-      // const leftPoint = {x: Math.min(startPoint.x, endPoint.x), y: Math.min(startPoint.y, endPoint.y)};
-      // const rightPoint = {x: Math.max(startPoint.x, endPoint.x), y: Math.max(startPoint.y, endPoint.y)};
-      // const angle = Math.atan2(rightPoint.y - leftPoint.y, rightPoint.x - leftPoint.x);
+
          
       ctx.beginPath();
       ctx.moveTo(startPoint.x, startPoint.y);
@@ -182,20 +181,6 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
       ctx.restore();
       ctx.save();
 
-      // Draw the distance text - to do once I understand trigonometry
-      // ctx.translate((startPoint.x + endPoint.x)/2, (startPoint.y + endPoint.y)/2 - scaledSize);
-      // ctx.rotate(-angle);
-      // ctx.beginPath();
-      // ctx.fillStyle = 'hsl(217 91% 60%)';
-      // ctx.fillRect(0, 0, scaledSize, scaledSize);
-      // ctx.restore();
-      // ctx.save();
-
-      // ctx.translate((startPoint.x + endPoint.x)/2, (startPoint.y + endPoint.y)/2 - 8);
-      // ctx.rotate(-angle);
-      // ctx.fillStyle = 'white';
-      // ctx.fillText(distance !== null ? distance.toString() : '', 0, 0);
-      // ctx.restore();
     }
 
     ctx.restore();
@@ -215,26 +200,40 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
     return () => clearTimeout(timeoutId);
   }, [selectedProfileId]);
 
+  // Throttled and optimized mouse move handler
   const handleCanvasMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+    // Extract event properties synchronously as the event object might be pooled by React
+    const { movementX, movementY, clientX, clientY, shiftKey } = event;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Cancel previous animation frame
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
 
-    if (selectedTool === 'move' && isImageDragging) {
-      const dx = event.movementX / zoomLevel;
-      const dy = event.movementY / zoomLevel;
-      setImagePosition((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
-    } else if (selectedTool === 'ruler') {
-      const rect = canvas.getBoundingClientRect();
-      let x = (event.clientX - rect.left) / zoomLevel;
-      let y = (event.clientY - rect.top) / zoomLevel;
+    animationFrameRef.current = requestAnimationFrame(() => {
+      if (selectedTool === 'move' && isImageDragging) {
+        const dx = movementX / zoomLevel;
+        const dy = movementY / zoomLevel;
+        // Use a functional update to ensure we're always updating from the latest state, preventing lag.
+        setImagePosition(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+      } else if (selectedTool === 'ruler') {
+        const rect = canvas.getBoundingClientRect();
+        let x = clientX - rect.left;
+        let y = clientY - rect.top;
 
       // Update cursor style based on mouse position
       if (startPoint && endPoint) {
+        // We use scaled coordinates for hit-testing against the cursor position
+        const scaledStartPoint = { x: startPoint.x * zoomLevel, y: startPoint.y * zoomLevel };
+        const scaledEndPoint = { x: endPoint.x * zoomLevel, y: endPoint.y * zoomLevel };
+        
         if (
-          isNearLine(x, y) ||
-          Math.sqrt(Math.pow((x - startPoint.x), 2) + Math.pow(y - startPoint.y, 2)) < 10/zoomLevel ||
-          Math.sqrt(Math.pow(x - endPoint.x, 2) + Math.pow(y - endPoint.y, 2)) < 10/zoomLevel
+          isNearLine(x / zoomLevel, y / zoomLevel) ||
+          Math.sqrt(Math.pow((x - scaledStartPoint.x), 2) + Math.pow(y - scaledStartPoint.y, 2)) < 10 ||
+          Math.sqrt(Math.pow(x - scaledEndPoint.x, 2) + Math.pow(y - scaledEndPoint.y, 2)) < 10
         ) {
           setCursorStyle('move');
         } else {
@@ -242,63 +241,85 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
         }
       }
 
-      if (!isDragging) return;
+        if (!isDragging) return;
 
-      // Snap to 45-degree angle if shift key is pressed
-      if (event.shiftKey) {
+      // Convert mouse position to unscaled coordinates for updating state
+      x = x / zoomLevel;
+      y = y / zoomLevel;
+
+        if (shiftKey) {
+            if ((isDragging === 'start' || isDragging === 'end') && startPoint && endPoint) {
+              const anchorPoint = isDragging === 'start' ? endPoint : startPoint;
+              const angle = Math.atan2(y - anchorPoint.y, x - anchorPoint.x);
+              const snappedAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+              const distance = Math.sqrt(Math.pow(x - anchorPoint.x, 2) + Math.pow(y - anchorPoint.y, 2));
+              x = anchorPoint.x + Math.cos(snappedAngle) * distance;
+              y = anchorPoint.y + Math.sin(snappedAngle) * distance;
+            }
+        }
+  
         if (isDragging === 'start' && endPoint) {
-          const angle = Math.atan2(y - endPoint.y, x - endPoint.x);
-          const snappedAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
-          const distance = Math.sqrt(Math.pow(x - endPoint.x, 2) + Math.pow(y - endPoint.y, 2));
-          x = endPoint.x + Math.cos(snappedAngle) * distance;
-          y = endPoint.y + Math.sin(snappedAngle) * distance;
+          setStartPoint({ x, y });
+          setDistance(calculateDistance({ x, y }, endPoint));
         } else if (isDragging === 'end' && startPoint) {
-          const angle = Math.atan2(y - startPoint.y, x - startPoint.x);
-          const snappedAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
-          const distance = Math.sqrt(Math.pow(x - startPoint.x, 2) + Math.pow(y - startPoint.y, 2));
-          x = startPoint.x + Math.cos(snappedAngle) * distance;
-          y = startPoint.y + Math.sin(snappedAngle) * distance;
+          setEndPoint({ x, y });
+          setDistance(calculateDistance(startPoint, { x, y }));
+        } else if (isDragging === 'line') {
+          const dx = movementX / zoomLevel;
+          const dy = movementY / zoomLevel;
+          // Use functional updates to ensure we're always moving relative to the latest state, preventing lag.
+          setStartPoint(prev => prev ? { x: prev.x + dx, y: prev.y + dy } : null);
+          setEndPoint(prev => prev ? { x: prev.x + dx, y: prev.y + dy } : null);
         }
       }
+    });
+  }, [selectedTool, isImageDragging, startPoint, endPoint, isDragging, zoomLevel, isNearLine, calculateDistance]);
 
-      if (isDragging === 'start' && endPoint) {
-        setStartPoint({ x, y });
-        setDistance(calculateDistance({ x, y }, endPoint));
-      } else if (isDragging === 'end' && startPoint) {
-        setEndPoint({ x, y });
-        setDistance(calculateDistance(startPoint, { x, y }));
-      } else if (isDragging === 'line' && startPoint && endPoint) {
-        const dx = event.movementX/zoomLevel;
-        const dy = event.movementY/zoomLevel;
-        setStartPoint({ x: startPoint.x + dx, y: startPoint.y + dy });
-        setEndPoint({ x: endPoint.x + dx, y: endPoint.y + dy });
-      }
+  // Debounced store update function
+  const debouncedUpdateStore = useCallback(() => {
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
     }
+    
+    updateTimeoutRef.current = setTimeout(() => {
+      if (distance && selectedProfile) {
+        // Update the selected profile's measurementPixels first
+        updateProfile({ ...selectedProfile, measurementPixels: distance });
+        
+        // Then update all profiles with the linked measurement and save to DB
+        updateLinkedMeasurementAndAllProfiles('pixels', distance);
+      }
+    }, 150); // 300ms debounce
+  }, [distance, selectedProfileId]);
 
-  }, [startPoint, endPoint, isDragging, zoomLevel, calculateDistance, drawMeasurementTool, selectedTool, isImageDragging]);
-
-  const handleCanvasMouseUp = () => {
+  const handleCanvasMouseUp = useCallback(() => {
     setIsDragging(null);
     setIsImageDragging(false);
-    handleDistanceChange();
-  };
-
-
-
-
-  const handleDistanceChange = () => {
-    if (distance && selectedProfile) {
-      // Update the selected profile's measurementPixels first
-      updateProfile({ ...selectedProfile, measurementPixels: distance });
-      
-      // Then update all profiles with the linked measurement and save to DB
-      updateLinkedMeasurementAndAllProfiles('pixels', distance);
+    
+    // Cancel any pending animation frame
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
-  }
+    
+    // Use debounced update instead of immediate store update
+    debouncedUpdateStore();
+  }, [debouncedUpdateStore]);
 
+  // Cleanup function to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
 
-  // Define the onboarding steps in a configuration object
-  const onboardingSteps = [
+  // Memoized onboarding steps to prevent unnecessary re-renders
+  const onboardingSteps = useMemo(() => [
     {
       condition: (profiles: Profile[]) => profiles.every(profile => profile.measurementMm === null),
       badge: "2",
@@ -313,9 +334,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
       title: "Remove the background",
       description: "To get a frontal area estimate, use the remove background tool. This will take a few seconds.",
     },
-  ];
-
-  
+  ], []);
 
   return (
     <div>

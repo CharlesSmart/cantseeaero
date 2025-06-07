@@ -1,12 +1,8 @@
 import React, { useEffect } from 'react'; // useState is removed as pixelCounts is not directly used for rendering by this component anymore
-import { getPixelData, countPixels, PixelCounts } from '@/utils/imageProcessing';
+import { getPixelData, countPixels } from '@/utils/imageProcessing';
 import { useProfileStore } from '@/store/profileStore'; // Import Zustand store
 
-interface PixelCounterProps {
-  // imageFile and onPixelCountUpdate are removed
-}
-
-const PixelCounter: React.FC<PixelCounterProps> = () => {
+const PixelCounter: React.FC = () => {
   const store = useProfileStore();
   const { profiles, selectedProfileId, updateProfile } = store;
   const selectedProfile = profiles.find(p => p.id === selectedProfileId);
@@ -47,8 +43,8 @@ const PixelCounter: React.FC<PixelCounterProps> = () => {
     };
 
     analyzeImage();
-    // Dependency array: analyze when selected profile or its relevant image changes
-  }, [selectedProfile, imageToAnalyze, updateProfile]);
+    // Fixed: Use stable references to prevent infinite loops
+  }, [selectedProfileId, imageToAnalyze?.name, imageToAnalyze?.size]);
 
   // This component no longer renders anything itself, it's purely for background processing.
   // If it were to render something, it would use pixelCounts from selectedProfile.
