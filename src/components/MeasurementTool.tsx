@@ -27,7 +27,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
   const {
     selectedProfileId,
     profiles,
-    updateProfile,
+    // updateProfile,
     updateLinkedMeasurementAndAllProfiles,
   } = store;
 
@@ -186,19 +186,11 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
     ctx.restore();
   }, [startPoint, endPoint, zoomLevel, imagePosition]);
   
-  // Redraw after mouse down/up
-  useEffect(() => {
-    drawMeasurementTool();
-  }, [drawMeasurementTool, selectedProfileId]);
-
-  //Redraw after profile change with a delay to avoid async drawing issues - messy
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      drawMeasurementTool();
-    }, 50);
+ // Redraw after profile or ruler changes.
+ useEffect(() => {
   
-    return () => clearTimeout(timeoutId);
-  }, [selectedProfileId]);
+  drawMeasurementTool();
+}, [drawMeasurementTool]);
 
   // Throttled and optimized mouse move handler
   const handleCanvasMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -284,7 +276,8 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
     updateTimeoutRef.current = setTimeout(() => {
       if (distance && selectedProfile) {
         // Update the selected profile's measurementPixels first
-        updateProfile({ ...selectedProfile, measurementPixels: distance });
+        // updateProfile({ ...selectedProfile, measurementPixels: distance });
+        // commenting this out as it seems to be causing issues with async update profile clashes deleting cached image
         
         // Then update all profiles with the linked measurement and save to DB
         updateLinkedMeasurementAndAllProfiles('pixels', distance);
@@ -321,16 +314,22 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
   // Memoized onboarding steps to prevent unnecessary re-renders
   const onboardingSteps = useMemo(() => [
     {
-      condition: (profiles: Profile[]) => profiles.every(profile => profile.measurementMm === null),
-      badge: "2",
-      title: "Measure a known length",
-      description: "Use the ruler tool to measure a known length in pixels. <br />Then enter the length in mm on the left",
+      condition: (profiles: Profile[]) => profiles.every(profile => profile.measurementPixels === null && profile.measurementMm === null),
+      badge: "STEP 1",
+      title: "Measure a known length in pixels.",
+      description: "Use the ruler tool to measure a known length in pixels. <br />For example: 300mm of a tape measure.",
+    },
+    {
+      condition: (profiles: Profile[]) => profiles.every(profile => profile.measurementMm === null && profile.measurementPixels !== null),
+      badge: "STEP 2",
+      title: "Great, now calibrate with the true length.",
+      description: "In the left panel, enter the length in mm as a known length.",
     },
     {
       condition: (profiles: Profile[]) => 
         profiles.every(profile => profile.measurementMm !== null) && // Ensure the previous step is met
-        profiles.every(profile => profile.cachedImageUrl === null),
-      badge: "3",
+        profiles.every(profile => profile.cachedImage === null), //if every cached image is null user hasn't hit remove bg once.
+      badge: "STEP 3",
       title: "Remove the background",
       description: "To get a frontal area estimate, use the remove background tool. This will take a few seconds.",
     },

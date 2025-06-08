@@ -47,8 +47,8 @@ const MobileCameraPage: React.FC = () => {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { 
             facingMode: 'environment',
-            width: { ideal: 4096 },
-            height: { ideal: 2160 }
+            width: { ideal: 2160 },
+            height: { ideal: 1080 }
           },
           audio: false
         });

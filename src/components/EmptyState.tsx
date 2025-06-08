@@ -23,7 +23,6 @@ const EmptyState: React.FC<EmptyStateProps> = ({
     setProfiles: setProfilesState, // Alias to avoid conflict if any
     setSelectedProfileId,
     setLinkedMeasurements,
-    addProfile // For initializing a default profile if needed
   } = store;
 
   // Attempt to find the selected profile, or use the first profile if none is selected,
@@ -65,8 +64,11 @@ const EmptyState: React.FC<EmptyStateProps> = ({
         measurementPixels: null,
         measurementMm: null,
       };
-      addProfile(newProfile);
-      setSelectedProfileId(newProfile.id);
+      // Atomically update state to avoid race condition
+      useProfileStore.setState({
+        profiles: [newProfile],
+        selectedProfileId: newProfile.id,
+      });
     }
   };
 
