@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Badge } from "@/components/ui/badge"
-import { ChevronDown, Eraser, MousePointer2, Ruler } from "lucide-react"
+import { ChevronDown, Eraser, MousePointer2, Ruler, Wand2 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { Profile } from '@/types/Profile';
 import { useProfileStore } from '@/store/profileStore'; // Import Zustand store
@@ -27,23 +27,27 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
   const {
     selectedProfileId,
     profiles,
-    // updateProfile,
+    updateProfile,
     updateLinkedMeasurementAndAllProfiles,
   } = store;
 
   const selectedProfile = profiles.find(p => p.id === selectedProfileId);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [startPoint, setStartPoint] = useState<Point | null>(null);
   const [endPoint, setEndPoint] = useState<Point | null>(null);
   const [distance, setDistance] = useState<number | null>(null); // This local state is fine
   const [isDragging, setIsDragging] = useState<'start' | 'end' | 'line' | null>(null);
+  const [isErasing, setIsErasing] = useState<boolean>(false);
   const [cursorStyle, setCursorStyle] = useState<string>('default');
   const imageRef = useRef<HTMLImageElement | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
-  const [selectedTool, setSelectedTool] = useState<'move' | 'ruler'>('move'); // New state for selected tool
+  const [selectedTool, setSelectedTool] = useState<'move' | 'ruler' | 'eraser'>('move');
   const [imagePosition, setImagePosition] = useState<Point>({ x: 0, y: 0 });
   const [isImageDragging, setIsImageDragging] = useState<boolean>(false);
+  const [eraserSize] = useState<number>(40);
+  const [eraserPreviewPosition, setEraserPreviewPosition] = useState<Point | null>(null);
 
   // Performance optimization refs
   const animationFrameRef = useRef<number | null>(null);
@@ -61,6 +65,8 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
   useEffect(() => {
     if (selectedTool === 'ruler') {
       setCursorStyle('crosshair');
+    } else if (selectedTool === 'eraser') {
+      setCursorStyle('none');
     } else {
       setCursorStyle('default');
     }
@@ -69,20 +75,30 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
+    if (!canvas || !ctx || !imageUrl) return;
 
     // Set canvas to window size, not scaled image size
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
     const img = new Image();
+    img.crossOrigin = "anonymous";
     img.onload = () => {
       // Don't scale the image here - let drawMeasurementTool handle it
       imageRef.current = img;
+
+      // Create an off-screen canvas for persistent image manipulation
+      const offscreenCanvas = document.createElement('canvas');
+      offscreenCanvas.width = img.width;
+      offscreenCanvas.height = img.height;
+      const offscreenCtx = offscreenCanvas.getContext('2d');
+      offscreenCtx?.drawImage(img, 0, 0);
+      imageCanvasRef.current = offscreenCanvas;
+
       drawMeasurementTool(); // Initial draw
     };
     img.src = imageUrl;
-  }, [imageUrl, zoomLevel]);
+  }, [imageUrl]);
 
   const isNearLine = useCallback((x: number, y: number): boolean => {
     if (!startPoint || !endPoint) return false;
@@ -95,44 +111,6 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
     return Math.abs(d1 + d2 - lineLength) < 5;
   }, [startPoint, endPoint, calculateDistance]);
 
-  const handleCanvasMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    // Convert to unscaled coordinates
-    const x = (event.clientX - rect.left) / zoomLevel;
-    const y = (event.clientY - rect.top) / zoomLevel;
-    
-    if (selectedTool === 'move') {
-      setIsImageDragging(true);
-    } else if (selectedTool === 'ruler') {
-      if (startPoint && endPoint) {
-        const startDist = Math.sqrt(Math.pow(x - startPoint.x, 2) + Math.pow(y - startPoint.y, 2));
-        const endDist = Math.sqrt(Math.pow(x - endPoint.x, 2) + Math.pow(y - endPoint.y, 2));
-        if (startDist < 10/zoomLevel) {
-          setIsDragging('start');
-        } else if (endDist < 10/zoomLevel) {
-          setIsDragging('end');
-        } else if (isNearLine(x, y)) {
-          setIsDragging('line');
-        } else {
-          setStartPoint({ x, y });
-          setEndPoint({ x, y });
-          setIsDragging('end');
-          setDistance(null);
-        }
-      } else if (!startPoint) {
-        setStartPoint({ x, y });
-        setEndPoint({ x, y });
-        setIsDragging('end');
-      } else {
-        setEndPoint({ x, y });
-        setDistance(calculateDistance({ x, y }, startPoint));
-      }
-    }
-  }, [selectedTool, startPoint, endPoint, isNearLine, zoomLevel, calculateDistance]);
-
   const drawMeasurementTool = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
@@ -142,9 +120,9 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
     ctx.save();
     ctx.scale(zoomLevel, zoomLevel);
 
-    // Redraw the background image with the updated position
-    if (imageRef.current) {
-      ctx.drawImage(imageRef.current, imagePosition.x, imagePosition.y);
+    // Redraw the background image from the off-screen canvas
+    if (imageCanvasRef.current) {
+      ctx.drawImage(imageCanvasRef.current, imagePosition.x, imagePosition.y);
     }
 
     if (startPoint && endPoint) {
@@ -184,13 +162,103 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
     }
 
     ctx.restore();
-  }, [startPoint, endPoint, zoomLevel, imagePosition]);
-  
- // Redraw after profile or ruler changes.
- useEffect(() => {
-  
-  drawMeasurementTool();
-}, [drawMeasurementTool]);
+
+    if (selectedTool === 'eraser' && eraserPreviewPosition) {
+      ctx.beginPath();
+      ctx.arc(eraserPreviewPosition.x, eraserPreviewPosition.y, (eraserSize / 2), 0, 2 * Math.PI);
+      ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(eraserPreviewPosition.x, eraserPreviewPosition.y, (eraserSize / 2) - 1, 0, 2 * Math.PI);
+      ctx.strokeStyle = 'white';
+      ctx.stroke();
+    }
+  }, [startPoint, endPoint, zoomLevel, imagePosition, selectedTool, eraserPreviewPosition, eraserSize]);
+
+  const performErase = useCallback((canvasX: number, canvasY: number) => {
+    const imageCanvas = imageCanvasRef.current;
+    if (!imageCanvas) return;
+
+    const ctx = imageCanvas.getContext('2d');
+    if (!ctx) return;
+
+    const imageX = (canvasX / zoomLevel) - imagePosition.x;
+    const imageY = (canvasY / zoomLevel) - imagePosition.y;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(imageX, imageY, eraserSize / 2 / zoomLevel, 0, 2 * Math.PI, false);
+    ctx.fill();
+    ctx.restore();
+
+    drawMeasurementTool();
+  }, [zoomLevel, imagePosition, eraserSize, drawMeasurementTool]);
+
+  const handleFinishErasing = useCallback(() => {
+    const imageCanvas = imageCanvasRef.current;
+    if (!imageCanvas || !selectedProfile || !updateProfile) return;
+
+    imageCanvas.toBlob((blob) => {
+      if (blob) {
+        const file = new File([blob], "erased_image.png", { type: 'image/png' });
+        const updatedProfile = {
+          ...selectedProfile,
+          cachedImage: file,
+        };
+        updateProfile(updatedProfile);
+      }
+    }, 'image/png');
+  }, [selectedProfile, updateProfile]);
+
+  const handleCanvasMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    // Convert to unscaled coordinates
+    const x = (event.clientX - rect.left) / zoomLevel;
+    const y = (event.clientY - rect.top) / zoomLevel;
+    
+    if (selectedTool === 'move') {
+      setIsImageDragging(true);
+    } else if (selectedTool === 'ruler') {
+      if (startPoint && endPoint) {
+        const startDist = Math.sqrt(Math.pow(x - startPoint.x, 2) + Math.pow(y - startPoint.y, 2));
+        const endDist = Math.sqrt(Math.pow(x - endPoint.x, 2) + Math.pow(y - endPoint.y, 2));
+        if (startDist < 10/zoomLevel) {
+          setIsDragging('start');
+        } else if (endDist < 10/zoomLevel) {
+          setIsDragging('end');
+        } else if (isNearLine(x, y)) {
+          setIsDragging('line');
+        } else {
+          setStartPoint({ x, y });
+          setEndPoint({ x, y });
+          setIsDragging('end');
+          setDistance(null);
+        }
+      } else if (!startPoint) {
+        setStartPoint({ x, y });
+        setEndPoint({ x, y });
+        setIsDragging('end');
+      } else {
+        setEndPoint({ x, y });
+        setDistance(calculateDistance({ x, y }, startPoint));
+      }
+    } else if (selectedTool === 'eraser') {
+      setIsErasing(true);
+      const canvasX = event.clientX - rect.left;
+      const canvasY = event.clientY - rect.top;
+      performErase(canvasX, canvasY);
+    }
+  }, [selectedTool, startPoint, endPoint, isNearLine, zoomLevel, calculateDistance, performErase]);
+
+  // Redraw after profile or ruler changes.
+  useEffect(() => {
+    drawMeasurementTool();
+  }, [drawMeasurementTool]);
 
   // Throttled and optimized mouse move handler
   const handleCanvasMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -263,9 +331,18 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
           setStartPoint(prev => prev ? { x: prev.x + dx, y: prev.y + dy } : null);
           setEndPoint(prev => prev ? { x: prev.x + dx, y: prev.y + dy } : null);
         }
+      } else if (selectedTool === 'eraser') {
+        const rect = canvas.getBoundingClientRect();
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+        setEraserPreviewPosition({ x, y });
+
+        if (isErasing) {
+            performErase(x, y);
+        }
       }
     });
-  }, [selectedTool, isImageDragging, startPoint, endPoint, isDragging, zoomLevel, isNearLine, calculateDistance]);
+  }, [selectedTool, isImageDragging, startPoint, endPoint, isDragging, zoomLevel, isNearLine, calculateDistance, isErasing, performErase]);
 
   // Debounced store update function
   const debouncedUpdateStore = useCallback(() => {
@@ -283,9 +360,14 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
         updateLinkedMeasurementAndAllProfiles('pixels', distance);
       }
     }, 150); // 300ms debounce
-  }, [distance, selectedProfileId]);
+  }, [distance, selectedProfile, updateLinkedMeasurementAndAllProfiles]);
 
   const handleCanvasMouseUp = useCallback(() => {
+    if (isErasing) {
+      setIsErasing(false);
+      setEraserPreviewPosition(null);
+      handleFinishErasing();
+    }
     setIsDragging(null);
     setIsImageDragging(false);
     
@@ -296,8 +378,10 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
     }
     
     // Use debounced update instead of immediate store update
-    debouncedUpdateStore();
-  }, [debouncedUpdateStore]);
+    if (selectedTool === 'ruler') {
+      debouncedUpdateStore();
+    }
+  }, [debouncedUpdateStore, isErasing, handleFinishErasing, selectedTool]);
 
   // Cleanup function to prevent memory leaks
   useEffect(() => {
@@ -370,11 +454,12 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
 
           <CardContent className='pt-4'>
           <div className='flex flex-row gap-2'>
-          <ToggleGroup defaultValue="move" type="single" onValueChange={(value) => setSelectedTool(value as 'move' | 'ruler')}>
+          <ToggleGroup defaultValue="move" type="single" onValueChange={(value) => { if (value) setSelectedTool(value as 'move' | 'ruler' | 'eraser')}}>
               <ToggleGroupItem value="move" className='gap-2 group'><MousePointer2 className="w-4 h-4" /><span className='hidden md:block'>Move</span></ToggleGroupItem>
               <ToggleGroupItem value="ruler" className='gap-2 group'><Ruler className="w-4 h-4" /><span className='hidden md:block'>Ruler</span></ToggleGroupItem>
+              <ToggleGroupItem value="eraser" className='gap-2 group' disabled={!selectedProfile?.cachedImage}><Eraser className="w-4 h-4" /><span className='hidden md:block'>Erase</span></ToggleGroupItem>
             </ToggleGroup>
-            <Button variant="ghost" onClick={onRemoveBG}><Eraser className="w-4 h-4" /><span className='hidden md:block'>Remove BG</span></Button>
+            <Button variant="ghost" onClick={onRemoveBG}><Wand2 className="w-4 h-4" /><span className='hidden md:block'>Remove BG</span></Button>
             <DropdownMenu>
             <DropdownMenuTrigger asChild><Button variant="secondary">{zoomLevel*100}%<ChevronDown className="ml-2 w-4 h-4" /></Button></DropdownMenuTrigger>
             <DropdownMenuContent>

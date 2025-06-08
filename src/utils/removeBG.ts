@@ -20,13 +20,10 @@ export const removeBG = async (
     const removedBackgroundUrl = (result.data as { url: string }[])[0].url;
     const response = await fetch(removedBackgroundUrl);
     const blob = await response.blob();
-    const cachedImageUrl = URL.createObjectURL(blob);
-    const fileName = "cachedImage.png";
-    const cachedImage = new File([blob], fileName, { type: blob.type });
+    const cachedImage = new File([blob], "cachedImage.png", { type: blob.type });
 
     const updatedProfile = { 
       ...selectedProfile, 
-      cachedImageUrl,
       cachedImage,
     };
     handleUpdateProfile(updatedProfile);

@@ -5,6 +5,7 @@ import {
   getProfiles as getProfilesFromDB,
   deleteProfile as deleteProfileFromDB
 } from '../utils/indexedDB';
+import { countPixels, getPixelData } from '@/utils/imageProcessing';
 
 interface ProfileState {
   profiles: Profile[];
@@ -85,11 +86,25 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   setSelectedProfileId: (id) => set({ selectedProfileId: id }),
 
   updateProfile: async (profile) => {
+    const { profiles } = get();
+    const oldProfile = profiles.find(p => p.id === profile.id);
+    const newProfileData = { ...profile };
+
+    if (newProfileData.cachedImage && newProfileData.cachedImage instanceof File && oldProfile?.cachedImage !== newProfileData.cachedImage) {
+      const imageToPixels = await getPixelData(newProfileData.cachedImage);
+      const newPixelCounts = await countPixels(imageToPixels);
+      newProfileData.pixelCounts = newPixelCounts;
+
+      if (oldProfile?.cachedImageUrl) {
+        URL.revokeObjectURL(oldProfile.cachedImageUrl);
+      }
+      newProfileData.cachedImageUrl = URL.createObjectURL(newProfileData.cachedImage);
+    }
+
     set((state) => ({
-      profiles: state.profiles.map((p) => (p.id === profile.id ? profile : p)),
+      profiles: state.profiles.map((p) => (p.id === newProfileData.id ? (newProfileData as Profile) : p)),
     }));
-    console.log("Updated profile", profile);
-    await saveProfileToDB(profile);
+    await saveProfileToDB(newProfileData as Profile);
   },
 
   deleteProfile: async (id) => {
