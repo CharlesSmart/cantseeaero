@@ -10,8 +10,9 @@ import { Button } from './ui/button';
 import { PlusIcon, PanelLeftClose, PanelLeft, Link2 } from 'lucide-react';
 import { DataRowWithInput } from './ui/datarow';
 import Logo from '../assets/aerolens_logo.svg';
+import LogoDark from '../assets/aerolens_logo_dark.svg';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
+import { useTheme } from '@/components/theme-provider';
 
 interface AnalysisPanelProps {
     // Props related to profile state are removed
@@ -89,6 +90,8 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
         }
     };
 
+    const { theme } = useTheme();
+
     return (
     <div role="complementary" aria-label="Analysis Panel">
         {!isPanelVisible && (
@@ -107,7 +110,11 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
         {isPanelVisible && (
         <Card className='max-w-xs max-h-[calc(100vh-2rem)] overflow-y-auto fixed left-4 top-4 no-scrollbar'>
             <CardHeader className='pb-0'>
-                <div><img src={Logo} alt="Windtunnel Logo" /></div>
+                {theme === 'dark' ? (
+                    <div><img src={LogoDark} alt="Windtunnel Logo" /></div>
+                ) : (
+                    <div><img src={Logo} alt="Windtunnel Logo" /></div>
+                )}
                 <Button 
                     variant="ghost" 
                     onClick={togglePanelVisibility} 
