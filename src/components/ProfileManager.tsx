@@ -41,7 +41,8 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({ profiles, onSelectProfi
               <TabsTrigger 
                 key={profile.id}
                 value={toWords(displayId)} 
-                onClick={() => onSelectProfile(profile.id)} 
+                onClick={() => onSelectProfile(profile.id)}
+                onFocus={() => onSelectProfile(profile.id)}
                 className="relative group"
                 aria-label={`Select profile ${displayText}`}
               >
