@@ -1,12 +1,12 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback /*, useMemo*/ } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent /*, CardHeader*/ } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { Badge } from "@/components/ui/badge"
+// import { Badge } from "@/components/ui/badge"
 import { ChevronDown, Eraser, MousePointer2, Ruler, Wand2 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
-import { Profile } from '@/types/Profile';
+// import { Profile } from '@/types/Profile';
 import { useProfileStore } from '@/store/profileStore'; // Import Zustand store
 
 interface Point {
@@ -396,7 +396,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
   }, []);
 
   // Memoized onboarding steps to prevent unnecessary re-renders
-  const onboardingSteps = useMemo(() => [
+  /* const onboardingSteps = useMemo(() => [
     {
       condition: (profiles: Profile[]) => profiles.every(profile => profile.measurementPixels === null && profile.measurementMm === null),
       badge: "STEP 1",
@@ -417,7 +417,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
       title: "Remove the background",
       description: "To get a frontal area estimate, use the remove background tool. This will take a few seconds.",
     },
-  ], []);
+  ], []); */
 
   return (
     <div>
@@ -439,7 +439,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
           }
 
           {/* Render the onboarding steps */}
-          {onboardingSteps.map((step, index) => (
+          {/* {onboardingSteps.map((step, index) => (
             step.condition(profiles) && (
               <CardHeader key={index} className='flex flex-col gap-2 pb-0'>
                 <div className="">
@@ -450,7 +450,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({ imageUrl, onRemoveBG,
                 </div>
               </CardHeader>
             )
-          ))}
+          ))} */}
 
           <CardContent className='pt-4'>
           <div className='flex flex-row gap-2'>
