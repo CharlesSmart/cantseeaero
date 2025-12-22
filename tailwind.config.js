@@ -7,6 +7,10 @@ export default {
   ],
   theme: {
   	extend: {
+		fontFamily: {
+			sans: ['DM Sans', 'system-ui', 'Avenir', 'Helvetica', 'Arial', 'sans-serif'],
+			mono: ['DM Mono', 'monospace'],
+		},
 		backgroundImage: {
 			'background-pattern': "url('/src/assets/3dpattern.svg')",
 		},
